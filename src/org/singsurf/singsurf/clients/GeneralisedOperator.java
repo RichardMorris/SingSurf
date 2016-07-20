@@ -1,0 +1,13 @@
+/*
+Created 17 Sep 2006 - Richard Morris
+*/
+package org.singsurf.singsurf.clients;
+
+import org.singsurf.singsurf.Calculator;
+
+import jv.project.PgGeometryIf;
+
+public interface GeneralisedOperator {
+	public void setIngredient(Calculator inCalc);
+	public boolean goodIngredient();
+}

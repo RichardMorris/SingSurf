@@ -1,0 +1,142 @@
+<definition name="Project onto surface" type="mapping" opType="psurf">
+// Projects curves from the parameter space onto a surface
+S;
+<variable name="x">
+<variable name="y">
+<variable name="S" dim="3" type="psurf">
+</definition>
+
+<definition name="Gauss map" type="mapping" opType="psurf">
+// Projects curves from the paraameter space onto a surface
+N / sqrt(N.N);
+N = Sx ^^ Sy;
+Sx = diff(S,x);
+Sy = diff(S,y);
+<variable name="x">
+<variable name="y">
+<variable name="S" dim="3" type="psurf">
+</definition>
+
+<definition name="Parallel surface" type="mapping" opType="psurf">
+// Parallel surface
+S + a N / sqrt(N.N);
+N = Sx ^^ Sy;
+Sx = diff(S,x);
+Sy = diff(S,y);
+<variable name="x">
+<variable name="y">
+<variable name="S" dim="3" type="psurf">
+</definition>
+
+<definition name="Parallel curve" type="mapping" opType="pcurve">
+// Parallel curve for 2D curves
+S + a N / sqrt(N.N);
+//N = Sxx - (Sxx . Sx ) Sx / (Sx .Sx);
+//Sxx = diff(Sx,x);
+N = Sx ^^ [0,0,1];
+Sx = diff(S,x);
+<variable name="x">
+<variable name="S" dim="3" type="pcurve">
+<parameter name="a" value="0.2">
+</definition>
+
+<definition name="Evolute" type="mapping" opType="pcurve">
+// Evolute of 2D curves
+S + (1/r) N / sqrt(N.N);
+r = abs((Sxx ^^ Sx ).[0,0,1]) / (sqrt(Sx . Sx)^3);
+N = Sxx - (Sxx . Sx ) Sx / (Sx .Sx);
+Sxx = diff(Sx,x);
+Sx = diff(S,x);
+<variable name="x">
+<variable name="S" dim="3" type="pcurve">
+</definition>
+
+<definition name="Focal Surface Sheet 1" type="mapping" opType="psurf">
+// Sheet 1 of a focal surface simple method
+S + 1/k1 N;
+k1 = H + sign sqrt( H^2 - K );
+K = ( l n - m^2 ) / ( E G - F^2 );
+H = ( G l + E n - 2 F m ) / ( 2 E G - 2 F^2);
+
+l = Sxx . N;
+m = Sxy . N;
+n = Syy . N;
+//#N = N1 / sqrt(N1.N1);
+N = Sx ^ Sy;
+E = Sx . Sx;
+F = Sx . Sy;
+G = Sy . Sy;
+Sxx = diff(Sx,x);
+Sxy = diff(Sx,y);
+Syy = diff(Sy,y);
+Sx = diff(S,x);
+Sy = diff(S,y);
+<variable name="x">
+<variable name="y">
+<variable name="S" dim="3" type="psurf">
+<parameter name="sign" value="1">
+</definition>
+
+<definition name="Focal Surface Sheet 2"  type="mapping" opType="psurf">
+// Sheet 2 of a focal surface
+S + 1/k1 N;
+k1 = H + sign sqrt( H^2 - K );
+K = ( l n - m^2 ) / ( E G - F^2 );
+H = ( G l + E n - 2 F m ) / ( 2 E G - 2 F^2);
+
+l = Sxx . N;
+m = Sxy . N;
+n = Syy . N;
+#N = N1 / sqrt(N1.N1);
+N = Sx ^ Sy;
+E = Sx . Sx;
+F = Sx . Sy;
+G = Sy . Sy;
+Sxx = diff(Sx,x);
+Sxy = diff(Sx,y);
+Syy = diff(Sy,y);
+Sx = diff(S,x);
+Sy = diff(S,y);
+S=(X,Y,Z);
+<variable name="X" type="AuxOutX">
+<variable name="Y" type="AuxOutY">
+<variable name="Z" type="AuxOutZ">
+<variable name="x" type="AuxInX">
+<variable name="y" type="AuxInY">
+<parameter name="sign" value="-1">
+</definition>
+
+<definition name="Colour by Curvature"  type="mapping" opType="psurf icurve">
+// Sheet 1 of a focal surface
+S;
+colours=(relK,0,1-relK,1);
+relK = (k1 -minK) / (maxK-minK);
+minK = -2; maxK = 2;
+k1 = H + sign sqrt( H^2 - K );
+K = ( l n - m^2 ) / ( E G - F^2 );
+H = ( G l + E n - 2 F m ) / ( 2 E G - 2 F^2);
+
+l = Sxx . N;
+m = Sxy . N;
+n = Syy . N;
+#N = N1 / sqrt(N1.N1);
+N = Sx ^ Sy;
+E = Sx . Sx;
+F = Sx . Sy;
+G = Sy . Sy;
+Sxx = diff(Sx,x);
+Sxy = diff(Sx,y);
+Syy = diff(Sy,y);
+Sx = diff(S,x);
+Sy = diff(S,y);
+#S = (x,y,1/3*x^3 - x y^2 + A(x^2 + y^2) + 0.1 x^3 y);
+#A = 0.7;
+S=(X,Y,Z);
+<variable name="X" type="AuxOutX">
+<variable name="Y" type="AuxOutY">
+<variable name="Z" type="AuxOutZ">
+<variable name="x" type="AuxInX">
+<variable name="y" type="AuxInY">
+<parameter name="sign" value="-1">
+</definition>
+

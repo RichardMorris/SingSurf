@@ -1,0 +1,153 @@
+<definition name="Swallowtail Surface" type="asurf">
+-4 z^3 y^2 - 27 y^4 + 16 x z^4 -128 x^2 z^2 + 144 x y^2 z + 256 x^3 - 0;
+<variable name="x" min="-1.14" max="1.03">
+<variable name="y" min="-1.13" max="1.04">
+<variable name="z" min="-1.12" max="1.05">
+<option name="coarse" value="16">
+<option name="fine" value="64">
+<option name="face" value="256">
+</definition>
+
+<definition name="Dervish" type="asurf">
+//# A Quintic Surface with 31 nodes
+//# Frow MathWorld/Enderass/Barth/Nordstrand
+a*F+q-0;
+F=h1*h2*h3*h4*h5;
+h1=x-z;
+h2=cos(2*Pi/5)*x-sin(2*Pi/5)*y-z;
+h3=cos(4*Pi/5)*x-sin(4*Pi/5)*y-z;
+h4=cos(6*Pi/5)*x-sin(6*Pi/5)*y-z;
+h5=cos(8*Pi/5)*x-sin(8*Pi/5)*y-z;
+q=(1-c*z)*(x^2+y^2-1+r*z^2)^2;
+r=(1+3*sqrt(5))/4;
+a=-(8/5)*(1+1/sqrt(5))*sqrt(5-sqrt(5));
+c=sqrt(5-sqrt(5))/2;
+<variable name="x" min="-6.1" max="6.1">
+<variable name="y" min="-5.9" max="5.8">
+<variable name="z" min="-5.9" max="4.2">
+<option name="coarse" value="16">
+<option name="fine" value="64">
+<option name="face" value="2048">
+</definition>
+
+<definition name="Endraß's Octic" type="asurf">
+//# Degree 8, 168 nodes
+64(x^2-w^2)(y^2-w^2)((x+y)^2-2 w^2)((x-y)^2-2 w^2)
+-(      a (x^2+y^2)^2
+        +(b z^2+c w^2)(x^2+y^2)
+        -16 z^4
+        +d z^2 w^2
+        +f w^4
+)^2 - 0; w = 1;
+a = -4(1+sqrt(2)); b =  8(2+sqrt(2));
+c =  2(2+7sqrt(2)); d =  8(1-2sqrt(2));
+f =  -(1+12sqrt(2)); 
+<variable name="x" min="-7.14" max="7.03">
+<variable name="y" min="-7.13" max="7.04">
+<variable name="z" min="-7.12" max="7.05">
+<option name="coarse" value="16">
+<option name="fine" value="64">
+<option name="face" value="2048">
+<option name="timeout" value="100">
+<option name="drawLines" value="false">
+</definition>
+
+<definition name="Sarti's Octic 144" type="asurf">
+S8 -9/16 Q8-0;
+Q8 = 256*(1+12*x^4*y^2*z^2+24*x^2*y^2*z^2+12*x^2*y^2+12*x^2*z^2+12*y^2*z^2+12*x^4*y^2+12*x^4*z^2+12*x^2*y^4+12*x^2*z^4+12*y^4*z^2+12*y^2*z^4+4*x^6*y^2+4*x^6*z^2+6*x^4*y^4+6*x^4*z^4+4*x^2*y^6+4*x^2*z^6+4*y^6*z^2+6*y^4*z^4+4*y^2*z^6+12*x^2*y^4*z^2+12*x^2*y^2*z^4+4*x^2+4*y^2+4*z^2+6*x^4+6*y^4+6*z^4+4*x^6+4*y^6+4*z^6+x^8+y^8+z^8);
+S8 = 3584.0*z^4+256.0*z^8+1792.0*z^4*x^4+10752.0*z^2*x^4+1792.0*x^4+256.0*x^8+256.0+1792.0*z^4*y^4+10752.0*z^2*y^4+1792.0*y^4+256.0*y^8+10752.0*z^4*x^2*y^2-21504.0*z^2*x^2*y^2+10752.0*x^2*y^2+3584.0*x^4*y^4;
+<variable name="x" min="-4.14" max="4.03">
+<variable name="y" min="-4.13" max="4.04">
+<variable name="z" min="-4.12" max="4.05">
+</definition>
+
+
+<definition name="Barth's Dectic" type="asurf">
+//# Degree 10, 345 nodes
+8 (x^2-t^4 y^2)(y^2 -t^4 z^2)(z^2-t^4 x^2)
+  * (x^4 + y^4 + z^4 - 2 x^2 y^2 - 2 x^2 z^2 - 2 y^2 z^2)
++ (3+5 t) (x^2+y^2+z^2-w^2)^2 (x^2 + y^2 + z^2 - (2-t) w^2)^2 w^2 - 0;
+t = (1+sqrt(5))/2;
+w = 2;
+<variable name="x" min="-7.14" max="7.03">
+<variable name="y" min="-7.13" max="7.04">
+<variable name="z" min="-7.12" max="7.05">
+<option name="coarse" value="16">
+<option name="fine" value="16">
+<option name="face" value="2048">
+<option name="timeout" value="100">
+</definition>
+
+<definition name="Barth's Dodectic" type="asurf">
+243 S12 - 22 Q12 - 0;
+Q12 = 
+ x^12+y^12+z^12+w^12
++90*x^4*y^4*z^4+90*x^4*y^4*w^4+90*x^4*z^4*w^4+90*y^4*z^4*w^4
++30*x^8*y^2*z^2+30*y^8*z^2*w^2+30*y^2*z^8*w^2+30*y^2*z^2*w^8
++6*x^2*z^10+6*x^2*w^10+6*x^10*y^2+6*x^10*z^2+6*x^10*w^2+6*x^2*y^10
++6*y^2*z^10+6*y^2*w^10+6*y^10*z^2+6*y^10*w^2+6*z^2*w^10+6*z^10*w^2
++15*x^8*y^4+15*x^8*z^4+15*x^8*w^4+15*y^4*z^8+15*y^4*w^8+15*z^8*w^4+15*z^4*w^8
++20*x^6*y^6+20*x^6*z^6+20*x^6*w^6+20*y^6*z^6+20*y^6*w^6+20*z^6*w^6
++15*x^4*y^8+15*x^4*z^8+15*x^4*w^8+15*y^8*z^4+15*y^8*w^4
++60*x^6*y^4*w^2+60*x^4*y^6*w^2+60*x^4*y^6*z^2+60*x^6*y^4*z^2+60*x^4*y^2*z^6+60*x^4*z^6*w^2+60*x^6*y^2*z^4+60*x^4*y^2*w^6
++60*x^6*y^2*w^4+60*x^6*z^4*w^2+60*x^6*z^2*w^4+60*y^2*z^4*w^6
++60*y^4*z^6*w^2+60*y^6*z^4*w^2+60*y^6*z^2*w^4+60*y^4*z^2*w^6+60*y^2*z^6*w^4
++60*x^4*z^2*w^6+60*x^2*y^6*z^4+60*x^2*y^6*w^4+60*x^2*y^4*z^6+60*x^2*y^4*w^6+60*x^2*z^6*w^4+60*x^2*z^4*w^6
++30*x^8*y^2*w^2+30*x^8*z^2*w^2+30*x^2*y^8*z^2+30*x^2*y^8*w^2+30*x^2*y^2*z^8+30*x^2*y^2*w^8+30*x^2*z^8*w^2+30*x^2*z^2*w^8
++120*x^2*y^2*z^6*w^2+120*x^2*y^6*z^2*w^2+120*x^2*y^2*z^2*w^6+120*x^6*y^2*z^2*w^2
++180*x^2*y^2*z^4*w^4+180*x^2*y^4*z^4*w^2+180*x^2*y^4*z^2*w^4+180*x^4*y^2*z^4*w^2+180*x^4*y^2*z^2*w^4+180*x^4*y^4*z^2*w^2
+;
+//# expanded form of Q12 = (x^2+y^2+z^2+w^2)^6;
+S12 = 33 sqrt(5) ( s23m + s34m + s42m)
+        + 19(s23p + s34p + s42p)
+        + 10 s234 - 14 s10 + 2 s11 - 6 s12
+        - 352 s51 + 336 l5^2 l1 + 48 l2 l3 l4;
+s10 = l1 (l2 l3 + l2 l4 + l3 l4);
+s11 = l1^2 ( l2 + l3 + l4);
+s12 = l1 (l2^2 + l3^2 +l4^2);
+s51 = l5^2 ( l2 + l3 + l4);
+s234 = l2^3 + l3^3 + l4^3;
+
+s23p = l2^2 l3 + l2 l3^2;
+s23m = l2^2 l3 - l2 l3^2;
+
+s34p = l3^2 l4 + l3 l4^2;
+s34m = l3^2 l4 - l3 l4^2;
+
+s42p = l4^2 l2 + l4 l2^2;
+s42m = l4^2 l2 - l4 l2^2;
+
+l1 = x^4 + y^4 + z^4 + w^4;
+l2 = x^2 y^2 + z^2 w^2;
+l3 = x^2 z^2 + y^2 w^2;
+l4 = x^2 w^2 + y^2 z^2;
+l5 = x y z w;
+w = 1;
+<variable name="x" min="-4.14" max="4.03">
+<variable name="y" min="-4.13" max="4.04">
+<variable name="z" min="-4.12" max="4.05">
+<option name="coarse" value="16">
+<option name="fine" value="16">
+<option name="face" value="2048">
+<option name="timeout" value="1000">
+</definition>
+
+<definition name="Kohn-Nirenberg domain" type="asurf">
+3 z + 9 z^2*b + b^4 + 15/7*b*re + a*(x^2 + y^2 + 9 z^2)^5;
+b = x^2 + y^2;
+re = ((x,y)*(x,y)*(x,y)*(x,y)*(x,y)*(x,y)).(1,0);
+<variable name="x" min="-3.14" max="3.03">
+<variable name="y" min="-3.13" max="3.04">
+<variable name="z" min="-3.12" max="3.05">
+</definition>
+
+<definition name="five-fold oddity" type="asurf">
+//# really just included as an examples of the
+//#use of complex numbers in equations 
+
+z + ((x,y)*(x,y)*(x,y)*(x,y)*(x,y)).(1,0);
+<variable name="x" min="-2.14" max="2.03">
+<variable name="y" min="-2.13" max="2.04">
+<variable name="z" min="-2.12" max="2.05">
+</definition>
+

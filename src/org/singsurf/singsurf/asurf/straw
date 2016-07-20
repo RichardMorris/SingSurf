@@ -1,0 +1,13 @@
+<includeonly><span class="t_nihongo_kanji" lang="ja">{{{1}}}</span><span style="font-weight: normal">{{
+  #if: {{{furi|}}}{{{2|}}}{{{3|}}}{{{eng|}}}| &#32;({{
+    #if:{{{furi|}}}|<span class="t_nihongo_kanji" lang="ja">{{{furi}}}</span>}}{{
+    #if:{{{2|}}}|{{
+      #if:{{{furi|}}}|,&nbsp;}}<i><span class="t_nihongo_romaji">{{{2}}}</span></i>}}{{
+      #if:{{{y?|}}}|{{ja help icon}}}}{{
+    #if:{{{3| {{{eng|}}} }}}|{{
+      #if:{{{furi| {{{2|}}} }}}|,&nbsp;}}{{{3|{{{eng}}} }}}}})|{{
+      #if:{{{y?|}}}|{{ja help icon}}}}}}{{
+  #if:{{{4|{{{extra|}}} }}}|&nbsp;{{{4|{{{extra}}} }}}}}</span></includeonly><noinclude>
+{{template doc}}<!--Note: currently: {{{1}}} is Kanji, {{{furi}}} is Furigana named param, {{{2}}} is Romaji, {{{3}}} is English, {{{eng}}} is English named param, {{{4}}} is extra, {{{y?}}} is Yes to ? Ja help icon
+--></noinclude>
+[[Category:Articles containing Japanese-language text]]

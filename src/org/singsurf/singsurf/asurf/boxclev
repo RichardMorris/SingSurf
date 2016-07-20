@@ -1,0 +1,3193 @@
+
+
+
+	/*
+	 * Function:	link_face
+	 * action:	links together the solutions which lie around a face
+	 *		and add to list of links, also add nodes (where one
+	 *		derivitive vanishes) to the list.
+	 *		There are two modes of operation:
+	 *		if internal is true it indicates that the face is internal
+	 *		to a box, in which case we are just interested in
+	 *		the nodes and not the links.
+	 */
+
+
+	/****		First some macros	****/
+
+
+	/* Dont want these
+		   || ( sols[a].dx == 0 && sols[b].dx == 0 ) \
+		   || ( sols[a].dy == 0 && sols[b].dy == 0 ) \
+		   || ( sols[a].dz == 0 && sols[b].dz == 0 ) \
+	*/
+
+
+	/*
+
+	*/
+
+
+	#define AddLink(a,b) {\
+			include_link(face,sols[a],sols[b]); }
+
+			Bern2D dxx,*dxy,*dxz, *dyy,*dyz,*dzz;
+
+	void calc_2nd_derivs(sol_info sol,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2)
+	{
+		Bern2D dxx,*dxy,*dxz,*dyy,*dyz,*dzz;
+
+	System.err.printf("Calc 2nd derivs\n");
+		if(sol.type == FACE_LL || sol.type == FACE_RR)
+		{ /* s=y, t = z */
+			dxx = d2;
+			dxy = diffx2D(dx); /* dyx */
+			dxz = diffy2D(dx); /* dzx */
+			dyy = diffx2D(dy);
+			dyz = diffy2D(dy); /* dzy */
+			dzz = diffy2D(dz);
+		}
+		else if(sol.type == FACE_FF || sol.type == FACE_BB)
+		{ /* s=x, t = z */
+			dxx = diffx2D(dx);
+			dxy = diffx2D(dy); 
+			dxz = diffx2D(dz); /* dz dx */
+			dyy = d2;
+			dyz = diffy2D(dy); /* dz dy */
+			dzz = diffy2D(dz);
+		}
+		else if(sol.type == FACE_UU || sol.type == FACE_DD)
+		{
+			dxx = diffx2D(dx);
+			dxy = diffx2D(dy); /* dydx */
+			dxz = diffx2D(dz); /* dzdx */
+			dyy = diffy2D(dy);
+			dyz = diffy2D(dz); /* dzdy */
+			dzz = d2;
+		}
+		sol.dxx = allonesign2D(dxx);
+		sol.dxy = allonesign2D(dxy);
+		sol.dxz = allonesign2D(dxz);
+		sol.dyy = allonesign2D(dyy);
+		sol.dyz = allonesign2D(dyz);
+		sol.dzz = allonesign2D(dzz);
+
+		free_bern2D(dxy);
+		free_bern2D(dxz);
+		free_bern2D(dyz);
+		if(sol.type != FACE_LL && sol.type != FACE_RR)
+			free_bern2D(dxx);
+		if(sol.type != FACE_FF && sol.type != FACE_BB)
+			free_bern2D(dyy);
+		if(sol.type != FACE_DD && sol.type != FACE_UU)
+			free_bern2D(dzz);
+	}
+
+	sol_info MakeNode(Face_info face,double pos_x,double pos_y,int f1,int f2,int f3,
+		Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2)
+	{
+		sol_info temp;
+
+		temp = make_sol2(face.type,face.xl,face.yl,face.zl,face.denom,pos_x,pos_y);
+		temp.dx = f1;
+		temp.dy = f2;
+		temp.dz = f3; 
+	#ifdef USE_2ND_DERIV
+			calc_2nd_derivs(temp,dx,dy,dz,d2);
+	#endif
+		return(temp);
+	}
+
+	#define GetMid { \
+		pos_x = pos_y = 0.0; \
+		for( i=1; i <= count; ++i ) \
+		{ \
+			sols[4] = get_nth_sol_on_face(face,i); \
+			calc_pos_on_face(face,sols[4],vec); \
+			pos_x += vec[0]; \
+			pos_y += vec[1]; \
+		} \
+		if( count == 0 ) \
+		{	pos_x = pos_y = 0.5; } \
+		else \
+		{	pos_x /= count; \
+			pos_y /= count; \
+		} }
+
+	void combine_links(Face_info face)
+	{
+		link_info l1;
+		face.links = null;
+
+		for(l1 = face.lb.links;l1!=null;l1=l1.next)
+			include_link(face,l1.A,l1.B);
+		for(l1 = face.lt.links;l1!=null;l1=l1.next)
+			include_link(face,l1.A,l1.B);
+		for(l1 = face.rb.links;l1!=null;l1=l1.next)
+			include_link(face,l1.A,l1.B);
+		for(l1 = face.rt.links;l1!=null;l1=l1.next)
+			include_link(face,l1.A,l1.B);
+
+	/*
+		if( 512 * face.yl == 264 * face.denom)
+		{
+			System.err.printf("combine_links: ");
+			print_face(face);
+		}
+	*/
+	}
+
+	void ReduceFace(Face_info big_face,Face_info face,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int internal,int f1,int f2,int f3)
+	{
+		quadbern2D b1;
+		quadbern2D dx1;
+		quadbern2D dy1;
+		quadbern2D dz1;
+		quadbern2D dd2;
+
+		face.lb = alloc_face();
+		face.rb = alloc_face();
+		face.lt = alloc_face();
+		face.rt = alloc_face();
+
+		b1 = reduce2D(bb);
+	#ifdef USE_2ND_DERIV
+		dd2 = reduce2D(d2);
+	#endif
+		if( f1 > 0 )      dx1 = reduce2D(posbern2D);
+		else if( f1 < 0 ) dx1 = reduce2D(negbern2D);
+		else if(face.type == FACE_LL || face.type == FACE_RR)
+				  dx1 = reduce2D(dx);
+		else		  dx1 = quadDiff2Dx(b1);
+
+		if( f2 > 0 )      dy1 = reduce2D(posbern2D);
+		else if( f2 < 0 ) dy1 = reduce2D(negbern2D);
+		else if(face.type == FACE_FF || face.type == FACE_BB)
+				  dy1 = reduce2D(dy);
+		else if(face.type == FACE_LL || face.type == FACE_RR)
+				  dy1 = quadDiff2Dx(b1);
+		else		  dy1 = quadDiff2Dy(b1);
+
+		if( f3 > 0 )      dz1 = reduce2D(posbern2D);
+		else if( f3 < 0 ) dz1 = reduce2D(negbern2D);
+		else if(face.type == FACE_UU || face.type == FACE_DD)
+				  dz1 = reduce2D(dz);
+		else		  dz1 = quadDiff2Dy(b1);
+
+		make_sub_faces(face,face.lb,face.rb,face.lt,face.rt);
+		split_face(face,face.lb,face.rb,face.lt,face.rt);
+
+		find_edge(face.lb.x_high,b1.lb,dx1.lb,dy1.lb,dz1.lb,X_HIGH);
+		find_edge(face.lb.y_high,b1.lb,dx1.lb,dy1.lb,dz1.lb,Y_HIGH);
+		find_edge(face.rt.x_low,b1.rt,dx1.rt,dy1.rt,dz1.rt,X_LOW);
+		find_edge(face.rt.y_low,b1.rt,dx1.rt,dy1.rt,dz1.rt,Y_LOW);
+
+		link_face(big_face,face.lb,b1.lb,dx1.lb,dy1.lb,dz1.lb,dd2.lb,internal);
+		face.lb.status = FOUND_EVERYTHING;
+		link_face(big_face,face.rb,b1.rb,dx1.rb,dy1.rb,dz1.rb,dd2.rb,internal);
+		face.rb.status = FOUND_EVERYTHING;
+		link_face(big_face,face.lt,b1.lt,dx1.lt,dy1.lt,dz1.lt,dd2.lt,internal);
+		face.lt.status = FOUND_EVERYTHING;
+		link_face(big_face,face.rt,b1.rt,dx1.rt,dy1.rt,dz1.rt,dd2.rt,internal);
+		face.rt.status = FOUND_EVERYTHING;
+
+	#ifdef FACETS
+		/* Now need to combine links from sub face to big face */
+		combine_links(face);
+	#endif
+		free_quadbern2D(b1);
+		free_quadbern2D(dx1);
+		free_quadbern2D(dy1);
+		free_quadbern2D(dz1);
+	}
+
+	void link_face0sols(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int f1,int f2,int f3)
+	{
+		Face_info x_face=null,*y_face=null,*z_face=null;
+		sol_info x_sols[2],*y_sols[2],*z_sols[2];
+		int DerivFlag, x_count=0, y_count=0, z_count=0;
+		double vec0[2],vec1[2],vec2[2],vec3[2],pos_x=0.0,pos_y=0.0,lam;
+		int flag,sign;
+		Bern2D det,*dxx,*dxy,*dyy;
+
+	#ifdef PRINT_LINKFACE04
+	System.err.printf("link0: %d %d %d\n",f1,f2,f3);
+	print_face(face);
+	#endif
+		sols[3] = sols[4] = null;
+
+		switch(face.type)
+		{
+		case FACE_LL: case FACE_RR:
+			if(f2 || f3) return;
+			dxx = diffx2D(dy);
+			dxy = diffy2D(dy);
+			dyy = diffy2D(dz);
+			break;
+		case FACE_FF: case FACE_BB:
+			if(f1 || f3) return;
+			dxx = diffx2D(dx);
+			dxy = diffy2D(dx);
+			dyy = diffy2D(dz);
+			break;
+		case FACE_UU: case FACE_DD:
+			if(f1 || f2) return;
+			dxx = diffx2D(dx);
+			dxy = diffy2D(dx);
+			dyy = diffy2D(dy);
+			break;
+		default:
+			return;
+		}
+		det = symetricDet2D(dxx,dxy,dyy);
+		if(det == null)
+		{
+			System.err.printf("null det\n");
+			System.err.printf("link_face0sols: %d %d %d\n",f1,f2,f3);
+			print_face(face);
+			printbern2D(dx);
+			printbern2D(dy);
+			printbern2D(dz);
+			printbern2D(dxx);
+			printbern2D(dxy);
+			printbern2D(dyy);
+			sign = 0;
+		}
+		else
+			sign = allonesign2D(det);
+		if(sign<0) return;
+
+		DerivFlag = true;
+		DerivTest(x_face,x_count,x_sols,dx,f1, y_face,y_count,y_sols,dy,f2);
+		DerivTest(x_face,x_count,x_sols,dx,f1, z_face,z_count,z_sols,dz,f3);
+		DerivTest(y_face,y_count,y_sols,dy,f2, z_face,z_count,z_sols,dz,f3);
+
+		if( DerivFlag ) 
+		{
+	#ifdef PRINT_LINKFACE04
+			System.err.printf("DerivFlag %d\n",DerivFlag);
+	#endif
+			return;
+		}
+	/*
+		if( pos_x != pos_x || pos_y != pos_y )
+			System.err.printf("pos_x %f pos_y %f\n",pos_x,pos_y);
+	*/
+		if(pos_x == 0.0 || pos_x == 1.0 || pos_y == 0.0 || pos_y == 1.0)
+		{
+	#ifdef PRINT_LINKFACE04
+	System.err.printf("Pos on boundary %f %f\n",pos_x,pos_y);
+	#endif
+			return;
+		}
+		sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+		flag = converge_node(sols[4],bb,dx,dy,dz,1,1,1);
+		if(!flag)
+		{
+	#ifdef PRINT_LINKFACE04
+	System.err.printf("conv_failed\n");
+	#endif
+		}
+		else
+			add_node(face,sols[4]);
+
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("link_face: count %d f1 %d f2 %d f3 %d\n",
+			0,f1,f2,f3);
+		print_sol(sols[4]);
+	/*
+		print_face(x_face);
+		print_face(y_face);
+		print_face(z_face);
+	*/
+	#endif
+	}
+
+	void link_face2sols(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int f1,int f2,int f3)
+	{
+		double pos_x,pos_y,vec[2];
+		int i,count=2;
+		int f1a,f2a,f3a;
+
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("link_face: count %d f1 %d f2 %d f3 %d\n",
+			2,f1,f2,f3);
+	print_face(face);
+	#endif
+		sols[3] = sols[4] = null;
+		if( PairTest(0,1) ) { AddLink(0,1); }
+		else
+		{
+			GetMid;
+
+			f1a = f1; f2a = f2; f3a = f3;
+			if(sols[0].dx == sols[1].dx) f1a = sols[0].dx;
+			if(sols[0].dy == sols[1].dy) f2a = sols[0].dy;
+			if(sols[0].dz == sols[1].dz) f3a = sols[0].dz;
+	/*
+			f1 = f1a; f2 = f2a; f3 = f3a;
+	*/
+			/* do we want a duplicate node */
+			if( ( f1a == 0 && f2a == 0 && f3a == 0 )
+			 || sols[0].dx == 0 || sols[0].dy == 0 || sols[0].dz == 0
+			 || sols[1].dx == 0 || sols[1].dy == 0 || sols[1].dz == 0 )
+			{
+				int res2;
+
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+				res2 = converge_node(sols[4],bb,dx,dy,dz,f1,f2,f3);
+				add_node(face,sols[4]);
+				AddLink(0,4);
+				AddLink(1,4);
+	#ifdef PRINT_LINKFACE04
+				System.err.printf("link_face2sols: All three zero conv %d\n",res2);
+				print_face_brief(face);
+	#endif
+				return;
+			}
+			else if( ( f1a == 0 && (f2a == 0 || f3a == 0 ) ) || ( f2a == 0 && f3a == 0 ) )
+			{
+				int res1=0,res2=0;
+				double vec1[2],vec2[2],dist1,dist2,dist3,dist4;
+
+				sols[3] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+
+				calc_pos_on_face(face,sols[0],vec1);
+				calc_pos_on_face(face,sols[1],vec2);
+				if(f1a == 0 && f2a == 0)
+				{
+					res1 = converge_node(sols[3],bb,dx,dy,dz,0,1,1);
+					res2 = converge_node(sols[4],bb,dx,dy,dz,1,0,1);
+				}
+				if(f1a == 0 && f3a == 0)
+				{
+					res1 = converge_node(sols[3],bb,dx,dy,dz,0,1,1);
+					res2 = converge_node(sols[4],bb,dx,dy,dz,1,1,0);
+				}
+				if(f2a == 0 && f3a == 0)
+				{
+					res1 = converge_node(sols[3],bb,dx,dy,dz,1,0,1);
+					res2 = converge_node(sols[4],bb,dx,dy,dz,1,1,0);
+				}
+				if(!res1 || ! res2)
+				{
+					System.err.printf("link_face2sols: converge failed! %d %d %d %d %d\n",f1,f2,f3,res1,res2);
+					GetMid;
+					sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+					add_node(face,sols[4]);
+					AddLink(0,4);
+					AddLink(1,4);
+	#ifdef PRINT_LINKFACE04
+	#endif
+					print_face_brief(face);
+					return;
+				}
+				dist1 = sqrt((vec1[0]-sols[3].root )*(vec1[0]-sols[3].root)
+					 +   (vec1[1]-sols[3].root2)*(vec1[1]-sols[3].root2) );
+				dist2 = sqrt((vec1[0]-sols[4].root )*(vec1[0]-sols[4].root)
+					 +   (vec1[1]-sols[4].root2)*(vec1[1]-sols[4].root2) );
+				dist3 = sqrt((vec2[0]-sols[3].root )*(vec2[0]-sols[3].root)
+					 +   (vec2[1]-sols[3].root2)*(vec2[1]-sols[3].root2) );
+				dist4 = sqrt((vec2[0]-sols[4].root )*(vec2[0]-sols[4].root)
+					 +   (vec2[1]-sols[4].root2)*(vec2[1]-sols[4].root2) );
+				if(dist1 < dist2 && dist4 < dist3 )
+				{
+					if(f1a == 0 && f2a == 0)
+					{
+						sols[3].dx = 0; sols[4].dx = sols[1].dx;
+						sols[3].dy = sols[0].dy; sols[4].dy = 0;
+						sols[3].dz = sols[4].dz = f3a;
+					}
+					if(f1a == 0 && f3a == 0)
+					{
+						sols[3].dx = 0; sols[4].dx = sols[1].dx;
+						sols[3].dy = sols[4].dy = f2a;
+						sols[3].dz = sols[0].dz; sols[4].dz = 0;
+					}
+					if(f2a == 0 && f3a == 0)
+					{
+						sols[3].dx = sols[4].dx = f1a;
+						sols[3].dy = 0; sols[4].dy = sols[1].dy;
+						sols[3].dz = sols[0].dz; sols[4].dz = 0;
+					}
+					add_node(face,sols[3]);
+					add_node(face,sols[4]);
+					AddLink(0,3);			
+					AddLink(3,4);			
+					AddLink(4,1);			
+				}
+				else if(dist1 > dist2 && dist4 > dist3 )
+				{
+					if(f1a == 0 && f2a == 0)
+					{
+						sols[3].dx = 0; sols[4].dx = sols[0].dx;
+						sols[3].dy = sols[1].dy; sols[4].dy = 0;
+						sols[3].dz = sols[4].dz = f3a;
+					}
+					if(f1a == 0 && f3a == 0)
+					{
+						sols[3].dx = 0; sols[4].dx = sols[0].dx;
+						sols[3].dy = sols[4].dy = f2a;
+						sols[3].dz = sols[1].dz; sols[4].dz = 0;
+					}
+					if(f2a == 0 && f3a == 0)
+					{
+						sols[3].dx = sols[4].dx = f1a;
+						sols[3].dy = 0; sols[4].dy = sols[0].dy;
+						sols[3].dz = sols[1].dz; sols[4].dz = 0;
+					}
+					add_node(face,sols[3]);
+					add_node(face,sols[4]);
+					AddLink(1,3);			
+					AddLink(3,4);			
+					AddLink(4,0);			
+				}
+				else
+				{
+					System.err.printf("link_face2sols: Wierd distances %f %f %f %f\n",dist1,dist2,dist3,dist4);
+	#ifdef PRINT_LINKFACE04
+					print_sol(sols[0]);
+					print_sol(sols[1]);
+					print_sol(sols[3]);
+					print_sol(sols[4]);
+	#endif
+					sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+					add_node(face,sols[4]);
+					AddLink(0,4);
+					AddLink(1,4);
+				}
+	#ifdef PRINT_LINKFACE04
+					System.err.printf("link_face2sols: added two nodes %d %d %d %d %d\n",f1,f2,f3,res1,res2);
+					print_face_brief(face);
+	#endif
+
+			}
+			else
+			{
+				if(f1!=f1a || f2!= f2a || f3 != f3a)
+				{
+	#ifdef PRINT_LINKFACE04
+				System.err.printf("link_face2: default ");
+					/* change this line to fix crash f1 = f1a; f2 = f2a; f3 = f3a; */
+					System.err.printf("f1 %d %d f2 %d %d f3 %d %d\n",
+						f1,f1a,f2,f2a,f3,f3a);
+	#endif
+					sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+					add_node(face,sols[4]);
+					AddLink(0,4);
+					AddLink(1,4);
+	#ifdef PRINT_LINKFACE04
+					print_face_brief(face);
+	#endif
+				}
+				else
+				{
+					sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+					add_node(face,sols[4]);
+					AddLink(0,4);
+					AddLink(1,4);
+				}
+			}
+		}
+	}
+
+	void link_face3sols(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int f1,int f2,int f3)
+	{
+		double pos_x,pos_y,vec[2];
+		int i,count=3;
+
+		sols[2] = get_nth_sol_on_face(face,3);
+		sols[3] = sols[4] = null;
+		GetMid;
+	/*
+		if( pos_x != pos_x || pos_y != pos_y )
+			System.err.printf("pos_x %f pos_y %f\n",pos_x,pos_y);
+	*/
+		sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+		add_node(face,sols[4]);
+		AddLink(0,4);
+		AddLink(1,4);
+		AddLink(2,4);
+	#ifdef PRINT_LINK_FACE
+		System.err.printf("link_face3sols: count %d f1 %d f2 %d f3 %d\n",
+			count,f1,f2,f3);
+		print_sol(sols[4]);
+		print_sol(sols[0]);
+		print_sol(sols[1]);
+		print_sol(sols[2]);
+	#endif
+
+	}
+
+	int sameEdge(sol_info s1,sol_info s2)
+	{
+		if(s1.type != s2.type) return 0;
+		switch(s1.type)
+		{
+		case X_AXIS:
+			if( s1.yl * s2.denom == s2.yl * s1.denom
+			 && s1.zl * s2.denom == s2.zl * s1.denom ) return 1;
+			else return 0;
+		case Y_AXIS:
+			if( s1.xl * s2.denom == s2.xl * s1.denom
+			 && s1.zl * s2.denom == s2.zl * s1.denom ) return 1;
+			else return 0;
+		case Z_AXIS:
+			if( s1.xl * s2.denom == s2.xl * s1.denom
+			 && s1.yl * s2.denom == s2.yl * s1.denom ) return 1;
+			else return 0;
+		default:
+			return 0;
+		}
+	}
+
+	int SameFace(sol_info s1,sol_info s2)
+	{
+		switch(s1.type)
+		{
+		case FACE_LL: case FACE_RR:
+			if(s2.type != FACE_LL && s2.type != FACE_RR) return 0;
+			if( s1.xl * s2.denom == s2.xl * s1.denom ) return 1;
+			else return 0;
+		case FACE_FF: case FACE_BB:
+			if(s2.type != FACE_FF && s2.type != FACE_BB) return 0;
+			if( s1.yl * s2.denom == s2.yl * s1.denom ) return 1;
+			else return 0;
+		case FACE_UU: case FACE_DD:
+			if(s2.type != FACE_UU && s2.type != FACE_DD) return 0;
+			if( s1.zl * s2.denom == s2.zl * s1.denom ) return 1;
+			else return 0;
+		default:
+			return 0;
+		}
+	}
+
+	void link_face4solsPos(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int f1,int f2,int f3)
+	{
+		double vec[2],pos_x=0.0,pos_y=0.0;
+		int i,count=4;
+		int Aind=-1,Bind=-1,Cind=-1,Dind=-1;
+
+		sols[4] = null;
+		if( PairTest(0,1) ) { Aind = 0; Bind = 1; Cind = 2; Dind = 3;	}
+		if( PairTest(0,2) ) { Aind = 0; Bind = 2; Cind = 1; Dind = 3;	}
+		if( PairTest(0,3) ) { Aind = 0; Bind = 3; Cind = 1; Dind = 2;	}
+		if( PairTest(1,2) ) { Aind = 1; Bind = 2; Cind = 0; Dind = 3;	}
+		if( PairTest(1,3) ) { Aind = 1; Bind = 3; Cind = 0; Dind = 2;	}
+		if( PairTest(2,3) ) { Aind = 2; Bind = 3; Cind = 0; Dind = 2;	}
+		if(Aind != -1)
+		{
+			AddLink(Aind,Bind);
+			if( PairTest(Cind,Dind) )
+			{
+				AddLink(Cind,Dind);
+				return;
+			}
+			pos_x = pos_y = 0.0;
+			calc_pos_on_face(face,sols[Cind],vec);
+			pos_x += vec[0];
+			pos_y += vec[1];
+			calc_pos_on_face(face,sols[Dind],vec);
+			pos_x += vec[0];
+			pos_y += vec[1];
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			add_node(face,sols[4]);
+			AddLink(2,4);
+			AddLink(3,4);
+			return;
+		}
+
+		/* None of the point match */
+		/* Test we have (1,1) (1,-1) (-1,1) (-1,-1) */
+
+		Aind = Bind = Cind = Dind = -1;
+		for(i=0;i<4;++i)
+		    switch(face.type)
+		    {
+			case FACE_LL: case FACE_RR:
+				if(sols[i].dy ==  1 && sols[i].dz ==  1) Aind = i;
+				if(sols[i].dy ==  1 && sols[i].dz == -1) Bind = i;
+				if(sols[i].dy == -1 && sols[i].dz ==  1) Cind = i;
+				if(sols[i].dy == -1 && sols[i].dz == -1) Dind = i;
+			break;
+			case FACE_FF: case FACE_BB:
+				if(sols[i].dx ==  1 && sols[i].dz ==  1) Aind = i;
+				if(sols[i].dx ==  1 && sols[i].dz == -1) Bind = i;
+				if(sols[i].dx == -1 && sols[i].dz ==  1) Cind = i;
+				if(sols[i].dx == -1 && sols[i].dz == -1) Dind = i;
+			break;
+			case FACE_DD: case FACE_UU:
+				if(sols[i].dx ==  1 && sols[i].dy ==  1) Aind = i;
+				if(sols[i].dx ==  1 && sols[i].dy == -1) Bind = i;
+				if(sols[i].dx == -1 && sols[i].dy ==  1) Cind = i;
+				if(sols[i].dx == -1 && sols[i].dy == -1) Dind = i;
+			break;
+		    }
+		if(Aind != -1 && Bind != -1 && Cind != -1 && Dind != -1 )
+		{
+			/* Now a nicly behaved example */
+			/* I think all sols should be on two oposite edges */
+			if(sameEdge(sols[Aind],sols[Bind]) && sameEdge(sols[Cind],sols[Dind]))
+			{
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("link4+ AB CD: %d %d %d %d\n",Aind,Bind,Cind,Dind);
+	#endif
+				pos_x = pos_y = 0.0;
+				calc_pos_on_face(face,sols[Aind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				calc_pos_on_face(face,sols[Cind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+				if(sols[Aind].dx != 0 && sols[Aind].dx == sols[Cind].dx)
+					sols[4].dx = sols[Aind].dx;
+				if(sols[Aind].dy != 0 && sols[Aind].dy == sols[Cind].dy)
+					sols[4].dy = sols[Aind].dy;
+				if(sols[Aind].dz != 0 && sols[Aind].dz == sols[Cind].dz)
+					sols[4].dz = sols[Aind].dz;
+
+				add_node(face,sols[4]);
+				AddLink(Aind,4);
+				AddLink(Cind,4);
+				pos_x = pos_y = 0.0;
+				calc_pos_on_face(face,sols[Bind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				calc_pos_on_face(face,sols[Dind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+
+				if(sols[Bind].dx != 0 && sols[Bind].dx == sols[Dind].dx)
+					sols[4].dx = sols[Bind].dx;
+				if(sols[Bind].dy != 0 && sols[Bind].dy == sols[Dind].dy)
+					sols[4].dy = sols[Bind].dy;
+				if(sols[Bind].dz != 0 && sols[Bind].dz == sols[Dind].dz)
+					sols[4].dz = sols[Bind].dz;
+
+				add_node(face,sols[4]);
+				AddLink(Bind,4);
+				AddLink(Dind,4);
+	#ifdef PRINT_LINKFACE04
+	print_face(face);
+	#endif
+				return;
+			}
+			else if(sameEdge(sols[Aind],sols[Cind]) && sameEdge(sols[Bind],sols[Dind]))
+			{
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("link4+ AC BD: %d %d %d %d\n",Aind,Bind,Cind,Dind);
+	#endif
+				pos_x = pos_y = 0.0;
+				calc_pos_on_face(face,sols[Aind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				calc_pos_on_face(face,sols[Bind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+
+				if(sols[Aind].dx != 0 && sols[Aind].dx == sols[Bind].dx)
+					sols[4].dx = sols[Aind].dx;
+				if(sols[Aind].dy != 0 && sols[Aind].dy == sols[Bind].dy)
+					sols[4].dy = sols[Aind].dy;
+				if(sols[Aind].dz != 0 && sols[Aind].dz == sols[Bind].dz)
+					sols[4].dz = sols[Aind].dz;
+
+				add_node(face,sols[4]);
+				AddLink(Aind,4);
+				AddLink(Bind,4);
+				pos_x = pos_y = 0.0;
+				calc_pos_on_face(face,sols[Cind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				calc_pos_on_face(face,sols[Dind],vec);
+				pos_x += vec[0];
+				pos_y += vec[1];
+				sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+
+				if(sols[Cind].dx != 0 && sols[Cind].dx == sols[Dind].dx)
+					sols[4].dx = sols[Cind].dx;
+				if(sols[Cind].dy != 0 && sols[Cind].dy == sols[Dind].dy)
+					sols[4].dy = sols[Cind].dy;
+				if(sols[Cind].dz != 0 && sols[Cind].dz == sols[Dind].dz)
+					sols[4].dz = sols[Cind].dz;
+
+				add_node(face,sols[4]);
+				AddLink(Cind,4);
+				AddLink(Dind,4);
+				return;
+			}
+		}
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("linkFace4Pos: odd sols not in expected posn\n");
+		print_face(face);
+	#endif
+		GetMid;
+		sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+		add_node(face,sols[4]);
+		AddLink(0,4);
+		AddLink(1,4);
+		AddLink(2,4);
+		AddLink(3,4);
+	}			
+						
+			 
+
+	void link_face4sols(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int f1,int f2,int f3)
+	{
+		Face_info x_face=null,*y_face=null,*z_face=null;
+		sol_info x_sols[2],*y_sols[2],*z_sols[2];
+		int DerivFlag, x_count=0, y_count=0, z_count=0;
+		double vec0[2],vec1[2],vec2[2],vec3[2],vec[2],pos_x=0.0,pos_y=0.0,lam;
+		Bern2D dxx=null,*dxy=null,*dyy=null,*det=null;
+		int i,count=4,sign,order[4],res1;
+		char signStr[80];
+
+		sols[2] = get_nth_sol_on_face(face,3);
+		sols[3] = get_nth_sol_on_face(face,4);
+		sols[4] = null;
+
+		BuildSolSigns(sols,4,signStr);
+		if( TestSigns1(signStr,4,3,"+++|+++|++-|+--","+++|++-|+-+|+--|-++|-+-|--+|---","abc|bca|cab",order)
+		 || TestSigns2(signStr,4,3,"+++|+++|+-+|+--","+++|++-|+-+|+--|-++|-+-|--+|---","abc|bca|cab",order) )
+		{
+			System.err.printf("Node and Link\n");
+			AddLink(order[0],order[1]);
+			calc_pos_on_face(face,sols[order[2]],vec);
+			pos_x = vec[0];
+			pos_y = vec[1];
+			calc_pos_on_face(face,sols[order[3]],vec);
+			pos_x += vec[0];
+			pos_y += vec[1];
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			add_node(face,sols[4]);
+			AddLink(order[2],4);
+			AddLink(order[3],4);
+	#ifdef PRINT_LINKFACE04
+			print_face(face);
+	#endif
+			return;
+		}
+		else if( TestSigns3(signStr,4,3,"+++|+++|++-|+-+","+++|++-|+-+|+--|-++|-+-|--+|---","abc|bca|cab",order) )
+		{
+			System.err.printf("2 Nodes and a Link\n");
+			AddLink(order[0],order[1]);
+			calc_pos_on_face(face,sols[order[2]],vec);
+			pos_x = vec[0];
+			pos_y = vec[1];
+			calc_pos_on_face(face,sols[order[3]],vec);
+			pos_x += vec[0];
+			pos_y += vec[1];
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			add_node(face,sols[4]);
+			AddLink(order[2],4);
+			AddLink(order[3],4);
+	#ifdef PRINT_LINKFACE04
+			print_face(face);
+	#endif
+			return;
+		}
+
+		switch(face.type)
+		{
+		case FACE_LL: case FACE_RR:
+			if(f2 || f3) break;
+			dxx = diffx2D(dy);
+			dxy = diffy2D(dy);
+			dyy = diffy2D(dz);
+			break;
+		case FACE_FF: case FACE_BB:
+			if(f1 || f3) break;
+			dxx = diffx2D(dx);
+			dxy = diffy2D(dx);
+			dyy = diffy2D(dz);
+			break;
+		case FACE_UU: case FACE_DD:
+			if(f1 || f2) break;
+			dxx = diffx2D(dx);
+			dxy = diffy2D(dx);
+			dyy = diffy2D(dy);
+			break;
+		}
+		if(dxx!=null)
+			det = symetricDet2D(dxx,dxy,dyy);
+		if(det == null)
+		{
+	#ifdef PRINT_LINKFACE04
+			System.err.printf("null det\n");
+	#endif
+			sign = 0;
+		}
+		else	sign = allonesign2D(det);
+
+	#ifdef PRINT_LINKFACE04
+	System.err.printf("link4: %d %d %d %d\n",f1,f2,f3,sign);
+	print_face(face);
+	#endif
+		if(sign>0)
+		{
+			link_face4solsPos(face,sols,bb,dx,dy,dz,d2,f1,f2,f3);
+			return;
+		}
+		if(sign==0)
+		{
+	#ifdef PRINT_LINKFACE04
+			System.err.printf("Zero det\n");
+			print_face(face);
+			printbern2D(bb);
+			printbern2D(dx);
+			printbern2D(dy);
+			printbern2D(dz);
+			printbern2D(dxx);
+			printbern2D(dxy);
+			printbern2D(dyy);
+			printbern2D(det);
+	#endif
+		}
+
+		GetMid;
+		if( PairTest(0,1) && PairTest(2,3) && !PairTest(0,2) )
+		{
+			DerivFlag = true;
+			DerivTest(x_face,x_count,x_sols,dx,f1, y_face,y_count,y_sols,dy,f2);
+			DerivTest(x_face,x_count,x_sols,dx,f1, z_face,z_count,z_sols,dz,f3);
+			DerivTest(y_face,y_count,y_sols,dy,f2, z_face,z_count,z_sols,dz,f3);
+			if( DerivFlag)
+			{
+				AddLink(0,1);
+				AddLink(2,3);
+				goto fini_link_face;
+			}
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			res1 = converge_node(sols[4],bb,dx,dy,dz,f1,f2,f3);
+			if(res1 == 0)
+			{
+				AddLink(0,1);
+				AddLink(2,3);
+				goto fini_link_face;
+			}
+		}
+		else if( PairTest(0,2) && PairTest(1,3) && !PairTest(0,1) )
+		{
+			DerivFlag = true;
+			DerivTest(x_face,x_count,x_sols,dx,f1, y_face,y_count,y_sols,dy,f2);
+			DerivTest(x_face,x_count,x_sols,dx,f1, z_face,z_count,z_sols,dz,f3);
+			DerivTest(y_face,y_count,y_sols,dy,f2, z_face,z_count,z_sols,dz,f3);
+			if( DerivFlag)
+			{
+				AddLink(0,2);
+				AddLink(1,3);
+				goto fini_link_face;
+			}
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			res1 = converge_node(sols[4],bb,dx,dy,dz,f1,f2,f3);
+			if(res1 == 0)
+			{
+				AddLink(0,2);
+				AddLink(1,3);
+				goto fini_link_face;
+			}
+		}
+		else if( PairTest(0,3) && PairTest(1,2) && !PairTest(0,1) )
+		{
+			DerivFlag = true;
+			DerivTest(x_face,x_count,x_sols,dx,f1, y_face,y_count,y_sols,dy,f2);
+			DerivTest(x_face,x_count,x_sols,dx,f1, z_face,z_count,z_sols,dz,f3);
+			DerivTest(y_face,y_count,y_sols,dy,f2, z_face,z_count,z_sols,dz,f3);
+			if( DerivFlag)
+			{
+				AddLink(0,3);
+				AddLink(1,2);
+				goto fini_link_face;
+			}
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			res1 = converge_node(sols[4],bb,dx,dy,dz,f1,f2,f3);
+			if(res1 == 0)
+			{
+				AddLink(0,3);
+				AddLink(1,2);
+				goto fini_link_face;
+			}
+		}
+		else
+		{
+			sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+			res1 = converge_node(sols[4],bb,dx,dy,dz,f1,f2,f3);
+		}
+
+	/*
+		if( pos_x != pos_x || pos_y != pos_y )
+			System.err.printf("pos_x %f pos_y %f\n",pos_x,pos_y);
+	*/
+		add_node(face,sols[4]);
+		AddLink(0,4);
+		AddLink(1,4);
+		AddLink(2,4);
+		AddLink(3,4);
+
+		fini_link_face:
+
+	#ifdef PRINT_LINKFACE04
+			System.err.printf("link_face4: finished DerivFalg %d res1 %d\n",DerivFlag,res1);
+			print_face_brief(face);
+	#endif
+		if( x_face != null ) free_face(x_face);
+		if( y_face != null ) free_face(y_face);
+		if( z_face != null ) free_face(z_face);
+	}
+
+	void link_facemanysols(Face_info face,sol_info *sols,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,
+		int count,int f1,int f2,int f3)
+	{
+		double pos_x,pos_y,vec[2];
+		int i;
+
+		sols[4] = null;
+		GetMid;
+		sols[4] = MakeNode(face,pos_x,pos_y,f1,f2,f3,dx,dy,dz,d2);
+		add_node(face,sols[4]);
+	#ifdef PRINT_LINKFACE04
+		System.err.printf("link_face many sols: ");
+		print_soltype(face.type);
+		System.err.printf(" (%d,%d,%d)/%d count %d f1 %d f2 %d f3 %d\n",
+			face.xl,face.yl,face.zl,face.denom,
+			count,f1,f2,f3);
+	#endif
+		for(i=1;i<=count;++i)
+		{
+			sols[0] = get_nth_sol_on_face(face,i);
+			AddLink(0,4);
+		}
+	}
+
+	void link_face(Face_info big_face,Face_info face,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,Bern2D d2,int internal)
+	{
+		int f1,f2,f3,count;
+		sol_info sols[5];
+
+
+		if( allonesign2D(bb) ) return;
+		f1 = allonesign2D(dx);
+		f2 = allonesign2D(dy);
+		f3 = allonesign2D(dz);	
+
+		sols[0] = sols[1] = sols[2] = sols[3] = sols[4] = null;
+		count = get_sols_on_face(face,sols);
+
+	#ifdef PRINT_LINK_FACE_ALL
+		System.err.printf("link_face: ");
+		print_soltype(face.type);
+		System.err.printf(" (%d,%d,%d)/%d count %d f1 %d f2 %d f3 %d\n",
+			face.xl,face.yl,face.zl,face.denom,
+			count,f1,f2,f3);
+	#endif
+		if( count == 0 )
+		{
+			if( f1 && f2 && f3 ) goto fini_link_face;
+			goto reduce_face;
+		}
+		else if( count == 1 )
+			goto fini_link_face;
+
+		else if( count == 2 )
+		{
+			if( !f1 && !f2 && !f3 ) goto reduce_face;
+
+			if( PairTest(0,1) && MatchDeriv(0) )
+			{
+				AddLink(0,1);
+				goto fini_link_face;
+			}
+			goto reduce_face;
+		}
+
+		else if( count == 3 )
+			goto reduce_face;
+
+		else if( count == 4 )
+		{
+			sols[2] = get_nth_sol_on_face(face,3);
+			sols[3] = get_nth_sol_on_face(face,4);
+
+			if( f1 && f2 && f3 ) goto reduce_face;
+			if( PairTest(0,1) && PairTest(2,3) )
+			{
+				if( PairTest(0,2) ) goto reduce_face;
+				if( StraddleDeriv(0,2) )
+				{
+					AddLink(0,1); AddLink(2,3);
+					goto fini_link_face;
+				}
+				else	goto reduce_face;
+			}
+			if( PairTest(0,2) && PairTest(1,3) )
+			{
+				if( StraddleDeriv(0,1) )
+				{
+					AddLink(0,2); AddLink(1,3);
+					goto fini_link_face;
+				}
+				else	goto reduce_face;
+			}
+			if( PairTest(0,3) && PairTest(1,2) )
+			{
+				if( StraddleDeriv(0,1) )
+				{
+					AddLink(0,3); AddLink(1,2);
+					goto fini_link_face;
+				}
+				else	goto reduce_face;
+			}
+		}
+
+		reduce_face:
+
+		if( face.denom < LINK_FACE_LEVEL )
+		{
+			ReduceFace(big_face,face,bb,dx,dy,dz,d2,internal,f1,f2,f3);
+			goto fini_link_face;
+		}
+
+		if( count == 0 )
+			link_face0sols(face,sols,bb,dx,dy,dz,d2,f1,f2,f3);
+		else if( count == 2 )
+			link_face2sols(face,sols,bb,dx,dy,dz,d2,f1,f2,f3);
+		else if( count == 3 )
+			link_face3sols(face,sols,bb,dx,dy,dz,d2,f1,f2,f3);
+		else if( count == 4 )
+			link_face4sols(face,sols,bb,dx,dy,dz,d2,f1,f2,f3);
+		else
+			link_facemanysols(face,sols,bb,dx,dy,dz,d2,count,f1,f2,f3);
+
+		fini_link_face:
+
+		return;
+	}
+
+
+	int link_node_three_planes(Box_info box,Bern3D bb,Bern3D dx,Bern3D dy,Bern3D dz,
+		int f1,int f2,int f3,int count,node_info *nodes)
+	{
+		int num_all_zero=0,i,flag;
+		double pos_x,pos_y,pos_z;
+		double vec[3];
+		sol_info sol;
+		node_info midnode;
+
+		if(count<6) return false;
+		for(i=0;i<count;++i)
+		{
+			if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 )
+				++num_all_zero;
+		}
+		if(num_all_zero < 6) return false;
+
+	#ifdef PRINT_SING
+		System.err.printf("link_three_planes sucess\n");
+		print_box_brief(box);
+	#endif
+
+		pos_x = pos_y = pos_z = 0.0;
+		for( i=0; i<count; ++i)
+		{
+			calc_pos_in_box(box,nodes[i].sol,vec);
+			pos_x +=  vec[0];
+			pos_y +=  vec[1];
+			pos_z +=  vec[2];
+		}
+		pos_x /= count; pos_y /= count; pos_z /= count;
+
+		sol = make_sol3(BOX,box.xl,box.yl,box.zl,box.denom,
+			pos_x,pos_y,pos_z );
+		sol.dx = 0;
+		sol.dy = 0;
+		sol.dz = 0;
+
+		flag = find_known_sing(sol);
+
+		add_sing(box,sol);
+		midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+		++nodecount; ++nodemax; ++nodenew;
+	#endif
+		midnode.next = null;
+		midnode.sol = sol;
+		midnode.status = NODE;
+		for( i=0; i<count; ++i)
+		{
+			add_node_link(box,midnode,nodes[i]);
+		}
+		return true;
+	}
+		
+	int link_node_crosscap(Box_info box, Bern3D bb,Bern3D dx,Bern3D dy,Bern3D dz,
+		int f1,int f2,int f3, int count,node_info nodes[])
+	{
+		Bern3D dxx,*dxy,*dxz,*dyy,*dyz,*dzz,*mat1,*mat2,*mat3;
+		node_info midnode;
+		double vec0[3],val;
+		int fxx,fxy,fxz,fyy,fyz,fzz;
+		int i,flag;
+		int negxx, negxy, negxz, negyy, negyz, negzz;
+		int posxx, posxy, posxz, posyy, posyz, poszz;
+		sol_info sol;
+
+		System.err.printf("link_crosscap\n");
+		print_box_brief(box);
+		dxx = diffx3D(dx); dxy = diffy3D(dx); dxz = diffz3D(dx);
+				   dyy = diffy3D(dy); dyz = diffz3D(dy);
+						      dzz = diffz3D(dz);
+		fxx = allonesign3D(dxx); fxy = allonesign3D(dxy); fxz = allonesign3D(dxz);
+		fyy = allonesign3D(dxx); fyz = allonesign3D(dyz); fzz = allonesign3D(dzz);
+
+		negxx = negxy = negxz = negyy = negyz = negzz = 0;
+		posxx = posxy = posxz = posyy = posyz = poszz = 0;
+		for(i=0;i<count;++i)
+		{
+			if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 )
+			{
+				calc_pos_in_box(box,nodes[i].sol,vec0);
+				if(!fxx) {
+					val = evalbern3D(dxx,vec0);
+					if(val < 0.0) negxx = 1;
+					if(val > 0.0) posxx = 1;
+				}
+				if(!fxy) {
+					val = evalbern3D(dxy,vec0);
+					if(val < 0.0) negxy = 1;
+					if(val > 0.0) posxy = 1;
+				}
+				if(!fxz) {
+					val = evalbern3D(dxz,vec0);
+					if(val < 0.0) negxz = 1;
+					if(val > 0.0) posxz = 1;
+				}
+				if(!fyy) {
+					val = evalbern3D(dyy,vec0);
+					if(val < 0.0) negyy = 1;
+					if(val > 0.0) posyy = 1;
+				}
+				if(!fyz) {
+					val = evalbern3D(dyz,vec0);
+					if(val < 0.0) negyz = 1;
+					if(val > 0.0) posyz = 1;
+				}
+				if(!fzz) {
+					val = evalbern3D(dzz,vec0);
+					if(val < 0.0) negzz = 1;
+					if(val > 0.0) poszz = 1;
+				}
+			}
+		}
+		mat1 = mat2 = mat3 = null;
+		if( ( negxx && posxx ) ) mat1 = dxx;
+		if( ( negxy && posxy ) ) { if(mat1!=null) mat1 = dxy; else mat2 = dxy; }
+		if( ( negxz && posxz ) ) { if(mat1!=null) mat1 = dxz; else if(mat2!=null) mat2 = dxz; else mat3 = dxz; }
+		if( ( negyy && posyy ) ) { if(mat1!=null) mat1 = dyy; else if(mat2!=null) mat2 = dyy; else mat3 = dyy; }
+		if( ( negyz && posyz ) ) { if(mat1!=null) mat1 = dyz; else if(mat2!=null) mat2 = dyz; else mat3 = dyz; }
+		if( ( negzz && poszz ) ) { if(mat1!=null) mat1 = dzz; else if(mat2!=null) mat2 = dzz; else mat3 = dzz; }
+		if(mat1 == null)
+		{
+			System.err.printf("link_cross_cap; mat1 == null count %d\n",count);
+			if(count!=2) return false;
+			add_node_link_simple(box,nodes[0],nodes[1]);
+			return true;
+		}
+		sol = make_sol3(BOX,box.xl,box.yl,box.zl,box.denom,
+			0.5,0.5,0.5 );
+		sol.dx = f1;
+		sol.dy = f2;
+		sol.dz = f3;
+		flag = converge_sing2(box,sol,bb,mat1,mat2,mat3);
+
+		if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+		{
+			System.err.printf("link_crosscap: odd posn D %f %f %f\n",sol.root,sol.root2,sol.root3);
+			print_box_brief(box);
+		}
+		add_sing(box,sol);
+
+		midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+		++nodecount; ++nodemax; ++nodenew;
+	#endif
+		midnode.next = null;
+		midnode.sol = sol;
+		midnode.status = NODE;
+		for( i=0; i<count; ++i)
+		{
+			add_node_link(box,midnode,nodes[i]);
+		}
+		return true;
+	}
+
+	int link_sing_many_zeros(Box_info box, Bern3D bb,Bern3D dx,Bern3D dy,Bern3D dz,
+		int f1,int f2,int f3, int count,node_info nodes[])
+	{
+		Bern3D dxx,*dxy,*dxz,*dyy,*dyz,*dzz,*mat1,*mat2,*mat3;
+		node_info midnode;
+		double vec0[3],val,*val_array;
+		int fxx,fxy,fxz,fyy,fyz,fzz;
+		int i,j,flag,*sign_array,*done,*matches,unmatched;
+		int negxx, negxy, negxz, negyy, negyz, negzz;
+		int posxx, posxy, posxz, posyy, posyz, poszz;
+		sol_info sol;
+
+		System.err.printf("link_crosscap (%d,%d,%d)/%d\n",box.xl,box.yl,box.zl,box.denom);
+
+		dxx = diffx3D(dx); dxy = diffy3D(dx); dxz = diffz3D(dx);
+				   dyy = diffy3D(dy); dyz = diffz3D(dy);
+						      dzz = diffz3D(dz);
+		fxx = allonesign3D(dxx); fxy = allonesign3D(dxy); fxz = allonesign3D(dxz);
+		fyy = allonesign3D(dxx); fyz = allonesign3D(dyz); fzz = allonesign3D(dzz);
+		sign_array = (int *) malloc(sizeof(int) * count * 6);
+		val_array = (double *) malloc(sizeof(double) * count * 6);
+
+		negxx = negxy = negxz = negyy = negyz = negzz = 0;
+		posxx = posxy = posxz = posyy = posyz = poszz = 0;
+		for(i=0;i<count;++i)
+		{
+			print_sol(nodes[i].sol);
+	/*		if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 )
+			{
+	*/
+				calc_pos_in_box(box,nodes[i].sol,vec0);
+				if(!fxx) {
+					val = evalbern3D(dxx,vec0);
+					if(val < 0.0) { negxx = 1; sign_array[i*6 + 0] = -1; }
+					else if(val > 0.0) { posxx = 1; sign_array[i*6 + 0] = 1; }
+					else sign_array[i*6 + 0] = 0;
+					val_array[i*6 + 0] = val;
+				}
+				else sign_array[i*6 + 0] = fxx;
+
+				if(!fxy) {
+					val = evalbern3D(dxy,vec0);
+					if(val < 0.0) { negxy = 1; sign_array[i*6 + 1] = -1; }
+					else if(val > 0.0) { posxy = 1; sign_array[i*6 + 1] = 1; }
+					else sign_array[i*6 + 1] = 0;
+					val_array[i*6 + 1] = val;
+				}
+				else sign_array[i*6 + 1] = fxy;
+
+				if(!fxz) {
+					val = evalbern3D(dxz,vec0);
+					if(val < 0.0) { negxz = 1; sign_array[i*6 + 2] = -1; }
+					else if(val > 0.0) { posxz = 1; sign_array[i*6 + 2] = 1; }
+					else sign_array[i*6 + 2] = 0;
+					val_array[i*6 + 2] = val;
+				}
+				else sign_array[i*6 + 2] = fxz;
+
+				if(!fyy) {
+					val = evalbern3D(dyy,vec0);
+					if(val < 0.0) { negyy = 1; sign_array[i*6 + 3] = -1; }
+					else if(val > 0.0) { posyy = 1; sign_array[i*6 + 3] = 1; }
+					else sign_array[i*6 + 3] = 0;
+					val_array[i*6 + 3] = val;
+				}
+				else sign_array[i*6 + 3] = fyy;
+
+				if(!fyz) {
+					val = evalbern3D(dyz,vec0);
+					if(val < 0.0) { negyz = 1; sign_array[i*6 + 4] = -1; }
+					else if(val > 0.0) { posyz = 1; sign_array[i*6 + 4] = 1; }
+					else sign_array[i*6 + 4] = 0;
+					val_array[i*6 + 4] = val;
+				}
+				else sign_array[i*6 + 4] = fyz;
+
+				if(!fzz) {
+					val = evalbern3D(dzz,vec0);
+					if(val < 0.0) { negzz = 1; sign_array[i*6 + 5] = -1; }
+					else if(val > 0.0) { poszz = 1; sign_array[i*6 + 5] = 1; }
+					else sign_array[i*6 + 5] = 0;
+					val_array[i*6 + 5] = val;
+				}
+				else sign_array[i*6 + 5] = fzz;
+
+	#ifdef USE_2ND_DERIV
+				if(nodes[i].sol.dxx > 0) posxx = 1;
+				if(nodes[i].sol.dxx < 0) negxx = 1;
+				if(nodes[i].sol.dxy > 0) posxy = 1;
+				if(nodes[i].sol.dxy < 0) negxy = 1;
+				if(nodes[i].sol.dxz > 0) posxz = 1;
+				if(nodes[i].sol.dxz < 0) negxz = 1;
+
+				if(nodes[i].sol.dyy > 0) posyy = 1;
+				if(nodes[i].sol.dyy < 0) negyy = 1;
+				if(nodes[i].sol.dyz > 0) posyz = 1;
+				if(nodes[i].sol.dyz < 0) negyz = 1;
+				if(nodes[i].sol.dzz > 0) poszz = 1;
+				if(nodes[i].sol.dzz < 0) negzz = 1;
+			System.err.printf("signs %d %d %d yy %d %d %d\t",
+				nodes[i].sol.dxx,nodes[i].sol.dxy,nodes[i].sol.dxz,
+				nodes[i].sol.dyy,nodes[i].sol.dyz,nodes[i].sol.dzz);
+			System.err.printf("signs %d %d %d yy %d %d %d\n",
+				sign_array[i*6+0],sign_array[i*6+1],sign_array[i*6+2],
+				sign_array[i*6+3],sign_array[i*6+4],sign_array[i*6+5]);
+			System.err.printf("fxx %d %d %d yy %d %d %d\t",
+				fxx,fxy,fxz, fyy,fyz,fzz);
+			System.err.printf("vals %f %f %f yy %f %f %f\n",
+				val_array[i*6+0],val_array[i*6+1],val_array[i*6+2],
+				val_array[i*6+3],val_array[i*6+4],val_array[i*6+5]);
+	#endif
+	/*
+			}
+	*/
+		}
+	#ifdef NOT_DEF
+		done  = (int *) malloc(sizeof(int) * count);
+		matches  = (int *) malloc(sizeof(int) * count);
+
+		for( i=0; i<count; ++i)
+		{
+			done[i] = 0;
+			matches[i]=-1;
+		}
+		for(i=0;i<count;++i)
+			for(j=i+1;j<count;++j)
+			{
+				if(done[i] || done[j] ) continue;
+
+	#ifdef NOT_DEF
+				if(nodes[i].sol.dx || nodes[i].sol.dy || nodes[i].sol.dz)
+				{
+					if( nodes[i].sol.dx == nodes[j].sol.dx
+					 && nodes[i].sol.dy == nodes[j].sol.dy
+					 && nodes[i].sol.dz == nodes[j].sol.dz )
+					{
+						matches[i] = j;
+						done[i] = done[j] = 1;
+					}
+				}
+				else if(nodes[j].sol.dx && !nodes[j].sol.dy && !nodes[j].sol.dz)
+	#endif
+				{
+					/* both are all zero */
+					int has_match=0,has_unmatch=0;
+
+					if( nodes[i].sol.dx != 0 || nodes[j].sol.dx != 0)
+					{
+					   if(nodes[i].sol.dx == nodes[j].sol.dx) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+
+					if( nodes[i].sol.dy != 0 || nodes[j].sol.dy != 0)
+					{
+					   if(nodes[i].sol.dy == nodes[j].sol.dy) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+
+					if( nodes[i].sol.dz != 0 || nodes[j].sol.dz != 0)
+					{
+					   if(nodes[i].sol.dz == nodes[j].sol.dz) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+
+					if( nodes[i].sol.dxx != 0 || nodes[j].sol.dxx != 0 )
+					{
+					   if(nodes[i].sol.dxx == nodes[j].sol.dxx) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+					if( nodes[i].sol.dxy != 0 || nodes[j].sol.dxy != 0 )
+					{
+					   if(nodes[i].sol.dxy == nodes[j].sol.dxy) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+					if( nodes[i].sol.dxz != 0 || nodes[j].sol.dxz != 0 )
+					{
+					   if(nodes[i].sol.dxz == nodes[j].sol.dxz) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+					if( nodes[i].sol.dyy != 0 || nodes[j].sol.dyy != 0 )
+					{
+					   if(nodes[i].sol.dyy == nodes[j].sol.dyy) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+					if( nodes[i].sol.dyz != 0 || nodes[j].sol.dyz != 0 )
+					{
+					   if(nodes[i].sol.dyz == nodes[j].sol.dyz) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+					}
+
+					if( nodes[i].sol.dzz != 0 || nodes[j].sol.dzz != 0 )
+					{
+					   if(nodes[i].sol.dzz == nodes[j].sol.dzz) 
+						has_match=1; 
+					   else
+						has_unmatch=1;
+
+					}
+					if(has_match && !has_unmatch)
+					{
+						matches[i] = j;
+						done[i] = done[j] = 1;
+					}
+				}
+			}
+				
+		unmatched = 0;
+		for( i=0; i<count; ++i)
+		{
+			if(!done[i]) ++unmatched;
+		}
+	System.err.printf("unmatched %d\n",unmatched);
+
+		if(unmatched == 0)
+		{
+			for( i=0; i<count; ++i)
+			{
+				if(matches[i]!=-1)
+					add_node_link_simple(box,nodes[i],nodes[matches[i]]);
+			}
+			return true;
+		}
+	/*		
+		if(unmatched==2)
+		{
+			j = -1;
+			for( i=0; i<count; ++i)
+				if(!done[i]) { if(j==-1) j=i; break; }
+			add_node_link_simple(box,nodes[i],nodes[j]);
+		}
+		if(unmatched<=2) return true;
+	*/
+	#endif
+
+		mat1 = mat2 = mat3 = null;
+		if( ( negxx && posxx ) ) mat1 = dxx;
+		if( ( negxy && posxy ) ) { if(mat1!=null) mat1 = dxy; else mat2 = dxy; }
+		if( ( negxz && posxz ) ) { if(mat1!=null) mat1 = dxz; else if(mat2!=null) mat2 = dxz; else mat3 = dxz; }
+		if( ( negyy && posyy ) ) { if(mat1!=null) mat1 = dyy; else if(mat2!=null) mat2 = dyy; else mat3 = dyy; }
+		if( ( negyz && posyz ) ) { if(mat1!=null) mat1 = dyz; else if(mat2!=null) mat2 = dyz; else mat3 = dyz; }
+		if( ( negzz && poszz ) ) { if(mat1!=null) mat1 = dzz; else if(mat2!=null) mat2 = dzz; else mat3 = dzz; }
+		if(mat1 != null)
+		{
+			sol = make_sol3(BOX,box.xl,box.yl,box.zl,box.denom,
+				0.5,0.5,0.5 );
+			sol.dx = f1;
+			sol.dy = f2;
+			sol.dz = f3;
+			flag = converge_sing2(box,sol,bb,mat1,mat2,mat3);
+			System.err.printf("link_sing_many_zeros conv %d\n",flag);
+			if(!flag) return false;
+			print_sol(sol);
+			if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+				System.err.printf("link_crosscap: odd posn D %f %f %f\n",sol.root,sol.root2,sol.root3);
+			
+			add_sing(box,sol);
+
+			midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+		++nodecount; ++nodemax; ++nodenew;
+	#endif
+			midnode.next = null;
+			midnode.sol = sol;
+			midnode.status = NODE;
+			for( i=0; i<count; ++i)
+			{
+					add_node_link_simple(box,midnode,nodes[i]);
+			}
+	#ifdef PRINT_LINK_SING
+			print_box_brief(box);
+	#endif
+			return true;
+		}
+		unmatched=count;
+		System.err.printf("link_sing_many_zeros; mat1 == null count %d\n",count);
+		if(unmatched==2)
+		{
+			add_node_link_simple(box,nodes[0],nodes[1]);
+			return true;
+		}
+		if(unmatched==3)
+		{
+			add_node_link_simple(box,nodes[0],nodes[1]);
+			add_node_link_simple(box,nodes[0],nodes[2]);
+			add_node_link_simple(box,nodes[1],nodes[2]);
+			return true;
+		}
+		if(unmatched==4)
+		{
+			int matchAB=1,matchAC=1,matchAD=1,matchBC=1,matchBD=1,matchCD=1;
+			int j;
+
+			for(j=0;j<6;++j)
+			{
+				if(sign_array[0*6+j]!=sign_array[1*6+j]) matchAB=0;
+				if(sign_array[0*6+j]!=sign_array[2*6+j]) matchAC=0;
+				if(sign_array[0*6+j]!=sign_array[3*6+j]) matchAD=0;
+				if(sign_array[1*6+j]!=sign_array[2*6+j]) matchBC=0;
+				if(sign_array[1*6+j]!=sign_array[3*6+j]) matchBD=0;
+				if(sign_array[2*6+j]!=sign_array[3*6+j]) matchCD=0;
+			}
+			if(matchAB && matchCD && !matchAC)
+			{
+				add_node_link_simple(box,nodes[0],nodes[1]);
+				add_node_link_simple(box,nodes[2],nodes[3]);
+				return true;
+			}
+			if(matchAC && matchBD && !matchAB)
+			{
+				add_node_link_simple(box,nodes[0],nodes[2]);
+				add_node_link_simple(box,nodes[1],nodes[3]);
+				return true;
+			}
+			if(matchAD && matchBC && !matchAB)
+			{
+				add_node_link_simple(box,nodes[0],nodes[3]);
+				add_node_link_simple(box,nodes[1],nodes[2]);
+				return true;
+			}
+			System.err.printf("link 4 with zeros failed\n");
+			return false;
+		}
+		return false;
+	}
+
+	int link_node_sing(Box_info box,Bern3D bb,Bern3D dx,Bern3D dy,Bern3D dz,
+		int f1,int f2,int f3,int count)
+	{
+		double pos_x,pos_y,pos_z,vec0[3];
+		sol_info sol;
+		int i,j,unmatched,flag,*done,*undone,order[8],all_zero_count;
+		node_info node,*midnode,**nodes,**resNodes;
+		char *signStr;
+
+	#ifdef PRINT_LINK_SING
+		print_box_brief(box);
+	#endif
+
+		flag = 0;
+
+
+		nodes = (node_info *) malloc(sizeof(node_info ) * count);
+		resNodes = (node_info *) malloc(sizeof(node_info ) * count);
+		done  = (int *) malloc(sizeof(int) * count);
+		undone  = (int *) malloc(sizeof(int) * count);
+		all_zero_count = 0;
+		pos_x = pos_y = pos_z = 0.0;
+		for( i=0; i<count; ++i)
+		{
+			node = get_nth_node_on_box(box,i+1);
+			if(node.sol.dx == 0 && node.sol.dy == 0 && node.sol.dz == 0 ) 
+				++all_zero_count;
+			calc_pos_in_box(box,node.sol,vec0);
+			pos_x +=  vec0[0];
+			pos_y +=  vec0[1];
+			pos_z +=  vec0[2];
+
+			nodes[i] = node;
+			done[i] = 0;
+			undone[i] = -1;
+		}
+		if( count == 0 ) pos_x = pos_y = pos_z = 0.5;
+		else
+		{
+			pos_x /= count;
+			pos_y /= count;
+			pos_z /= count;
+		}
+		if(pos_x < 0 || pos_x > 1.0 || pos_y < 0.0 || pos_y > 1.0 || pos_z < 0.0 || pos_z > 1.0 )
+		{
+			System.err.printf("link_sing: odd posn A %f %f %f\n",pos_x,pos_y,pos_z);
+			print_box_brief(box);
+		}
+
+		if(all_zero_count==2 && global_mode != MODE_KNOWN_SING)
+		{
+			flag = link_sing_many_zeros(box,bb,dx,dy,dz,f1,f2,f3,count,nodes);
+	#ifdef PRINT_LINK_SING
+			System.err.printf("Crosscap test %d\n",flag);
+	#endif
+			if(flag) return true;
+		}
+		if(all_zero_count==6 && global_mode != MODE_KNOWN_SING)
+		{
+			flag = link_node_three_planes(box,bb,dx,dy,dz,f1,f2,f3,count,nodes);
+			if(flag) return true;
+		}
+
+
+		signStr = BuildNodeSigns2(nodes,count);
+		sol = make_sol3(BOX,box.xl,box.yl,box.zl,box.denom,
+			pos_x,pos_y,pos_z );
+		sol.dx = f1;
+		sol.dy = f2;
+		sol.dz = f3;
+		flag = converge_sing(box,sol,f1,f2,f3);
+	#ifdef PRINT_LINK_SING
+		System.err.printf("converge test %d\n",flag);
+	#endif
+
+		if(global_mode == MODE_KNOWN_SING && flag)
+		{
+	System.err.printf("Sing with known sings\n");
+			add_sing(box,sol);
+
+			if( count == 0 ) return true;
+			midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+			++nodecount; ++nodemax; ++nodenew;
+	#endif
+			midnode.next = null;
+			midnode.sol = sol;
+			midnode.status = NODE;
+			for( i=0; i<count; ++i)
+			{
+				add_node_link(box,midnode,nodes[i]);
+			}
+			return true;
+		}
+
+		/* the singularity converged to outside the box */
+
+		if(count == 0)
+		{
+		   if(flag)
+		   {
+			if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+			{
+				System.err.printf("link_sing: odd posn B %f %f %f\n",sol.root,sol.root2,sol.root3);
+				print_box_brief(box);
+			}
+			add_sing(box,sol);
+
+			if( count == 0 ) return true;
+			midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+			++nodecount; ++nodemax; ++nodenew;
+	#endif
+			midnode.next = null;
+			midnode.sol = sol;
+			midnode.status = NODE;
+			for( i=0; i<count; ++i)
+			{
+				add_node_link(box,midnode,nodes[i]);
+			}
+		   }
+		   return true;
+		}
+
+
+		if(count==4)
+		{
+			if( TestSigns4(signStr,4,3,"++0|+-0|+0+|+0-","+++|-++","abc|bca|cab",order)
+			 || TestSigns5(signStr,4,3,"--0|+-0|0-0|0-0","+++|+-+","abc|bca|cab",order)
+			 || TestSigns6(signStr,4,3,"--0|+-0|0+0|0+0","+++|+-+","abc|bca|cab",order) )
+			{
+	System.err.printf("Forcing a singularity\n");
+				unmatched =4;
+				goto force_sing;
+			}
+		}
+
+		for(i=0;i<count;++i)
+		{
+			if(done[i]) continue;
+			for(j=i+1;j<count;++j)
+			{
+				if(done[i] || done[j]) continue;
+				if(MatchNodes(i,j))
+					done[i] = done[j] = 1;
+			}
+		}
+		unmatched = 0;
+		for(i=0;i<count;++i)
+		{
+			if(!done[i]) { undone[unmatched] = i; ++unmatched; }
+			done[i] = 0;
+		}
+			
+		if(unmatched == 3)
+		{	/* if there are three unmatched then one might be degenerate */
+			/* typically its (1,0,1)--(1,0,0)--(1,0,-1) */
+			/* or            (0,1,-1) -- (0,1,0) -- (-1,1,0) */
+
+			int k,matchedX=0,matchedY=0,matchedZ=0;
+
+			i = undone[0];
+			j = undone[1];
+			k = undone[2];
+	/*
+	System.err.printf("Linking 3 unmatched\n");
+	print_sol(nodes[i].sol);
+	print_sol(nodes[j].sol);
+	print_sol(nodes[k].sol);
+	*/
+			if( nodes[i].sol.dx == nodes[j].sol.dx
+			 && nodes[i].sol.dx == nodes[k].sol.dx ) matchedX = 1;
+			if( nodes[i].sol.dy == nodes[j].sol.dy
+			 && nodes[i].sol.dy == nodes[k].sol.dy ) matchedY = 1;
+			if( nodes[i].sol.dz == nodes[j].sol.dz
+			 && nodes[i].sol.dz == nodes[k].sol.dz ) matchedZ = 1;
+
+			if(matchedX && matchedY)
+			{
+				if(nodes[i].sol.dz == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}
+				else if(nodes[j].sol.dz == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				else
+				{		
+					add_node_link_simple(box,nodes[i],nodes[k]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(matchedX && matchedZ)
+			{
+				if(nodes[i].sol.dy == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}
+				else if(nodes[j].sol.dy == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				else
+				{		
+					add_node_link_simple(box,nodes[i],nodes[k]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(matchedY && matchedZ)
+			{
+				if(nodes[i].sol.dx == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}
+				else if(nodes[j].sol.dx == 0)
+				{		
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				else
+				{		
+					add_node_link_simple(box,nodes[i],nodes[k]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(matchedX)
+			{
+				/* or            (0,1,-1) -- (0,1,0) -- (-1,1,0) */
+				
+				if(nodes[i].sol.dx != 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0)
+				{
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}				
+				else if(nodes[j].sol.dx != 0 && nodes[j].sol.dy == 0 && nodes[j].sol.dz == 0)
+				{
+					add_node_link_simple(box,nodes[j],nodes[i]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}				
+				else if(nodes[k].sol.dx != 0 && nodes[k].sol.dy == 0 && nodes[k].sol.dz == 0)
+				{
+					add_node_link_simple(box,nodes[k],nodes[i]);
+					add_node_link_simple(box,nodes[k],nodes[j]);
+				}
+				else
+				{
+					System.err.printf("link_sing: wierdness\n");
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(matchedY)
+			{
+				/* or            (0,1,-1) -- (0,1,0) -- (-1,1,0) */
+				
+				if(nodes[i].sol.dx == 0 && nodes[i].sol.dz == 0 && nodes[i].sol.dy != 0)
+				{
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}				
+				else if(nodes[j].sol.dx == 0 && nodes[j].sol.dz == 0 && nodes[j].sol.dy != 0)
+				{
+					add_node_link_simple(box,nodes[j],nodes[i]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}				
+				else if(nodes[k].sol.dx == 0 && nodes[k].sol.dz == 0 && nodes[k].sol.dy != 0)
+				{
+					add_node_link_simple(box,nodes[k],nodes[i]);
+					add_node_link_simple(box,nodes[k],nodes[j]);
+				}
+				else
+				{
+					System.err.printf("link_sing: wierdness\n");
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}								
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(matchedZ)
+			{
+				/* or            (0,1,-1) -- (0,1,0) -- (-1,1,0) */
+				
+				if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz != 0)
+				{
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}				
+				else if(nodes[j].sol.dx == 0 && nodes[j].sol.dy == 0 && nodes[j].sol.dz != 0)
+				{
+					add_node_link_simple(box,nodes[j],nodes[i]);
+					add_node_link_simple(box,nodes[j],nodes[k]);
+				}				
+				else if(nodes[k].sol.dx == 0 && nodes[k].sol.dy== 0 && nodes[k].sol.dz != 0)
+				{
+					add_node_link_simple(box,nodes[k],nodes[i]);
+					add_node_link_simple(box,nodes[k],nodes[j]);
+				}
+				else
+				{
+					System.err.printf("link_sing: wierdness\n");
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					add_node_link_simple(box,nodes[i],nodes[k]);
+				}								
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}
+			else if(nodes[i].sol.dx == 0 && nodes[i].sol.dy== 0 && nodes[i].sol.dz == 0)
+			{
+				System.err.printf("link_sing: matching 000\n");
+				add_node_link_simple(box,nodes[i],nodes[j]);
+				add_node_link_simple(box,nodes[i],nodes[k]);
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}			
+			else if(nodes[j].sol.dx == 0 && nodes[j].sol.dy== 0 && nodes[j].sol.dz == 0)
+			{
+				System.err.printf("link_sing: matching 000\n");
+				add_node_link_simple(box,nodes[j],nodes[i]);
+				add_node_link_simple(box,nodes[j],nodes[k]);
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}			
+			else if(nodes[k].sol.dx == 0 && nodes[k].sol.dy== 0 && nodes[k].sol.dz == 0)
+			{
+				System.err.printf("link_sing: matching 000\n");
+				add_node_link_simple(box,nodes[k],nodes[i]);
+				add_node_link_simple(box,nodes[k],nodes[j]);
+				done[i] = done[j] = done[k];
+				unmatched = 0;
+			}			
+			else
+			{
+				System.err.printf("No two unmatched\n");
+			}
+	/*
+			print_box(box);
+	*/
+		}
+		if(unmatched == 0 || unmatched == 2)
+		{
+			if( count >= 4 && Test4nodesLike011(nodes,count,order)	)
+			{
+				double vecs[4][3];
+				int A,B,C,D;
+				Bern3D mat=null,*ddx,*ddy,*ddz;
+				double distAB,distAC,distAD,distBC,distBD,distCD;
+				double dist1x,dist1y,dist1z, dist2x,dist2y,dist2z;
+				double dist3x,dist3y,dist3z, dist4x,dist4y,dist4z;
+				double dist5x,dist5y,dist5z, dist6x,dist6y,dist6z;
+
+				if(nodes[order[0]].sol.dx == 0)
+					mat = dx;
+				else if(nodes[order[0]].sol.dy == 0)
+					mat = dy;
+				else if(nodes[order[0]].sol.dz == 0)
+					mat = dz;
+
+				ddx = diffx3D(mat);
+				ddy = diffy3D(mat);
+				ddz = diffz3D(mat);
+				if( !allonesign3D(ddx) && !allonesign3D(ddy) && !allonesign3D(ddz) )
+				{
+					free_bern3D(ddx); free_bern3D(ddy); free_bern3D(ddz);
+					System.err.printf("all derivs zero\n");
+					pos_x = pos_y = pos_z = 0.0;
+					for( i=0; i<4; ++i)
+					{
+						calc_pos_in_box(box,nodes[order[i]].sol,vec0);
+						pos_x +=  vec0[0];
+						pos_y +=  vec0[1];
+						pos_z +=  vec0[2];
+					}
+					pos_x /= 4;
+					pos_y /= 4;
+					pos_z /= 4;
+					System.err.printf("Calculated posn %f %f %f\n",pos_x,pos_y,pos_z);
+					sol.root = pos_x;
+					sol.root2 = pos_y;
+					sol.root3 = pos_z;
+					if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+					{
+						System.err.printf("link_sing: odd posn C %f %f %f\n",sol.root,sol.root2,sol.root3);
+						print_box_brief(box);
+					}
+					add_sing(box,sol);
+
+					midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+					++nodecount; ++nodemax; ++nodenew;
+	#endif
+					midnode.next = null;
+					midnode.sol = sol;
+					midnode.status = NODE;
+					for( i=0; i<4; ++i)
+					{
+						add_node_link(box,midnode,nodes[order[i]]);
+						done[order[i]] = 1;
+					}
+					goto force_deriv_cross_sing;
+				}
+				free_bern3D(ddx); free_bern3D(ddy); free_bern3D(ddz);
+
+				if(SameFace(nodes[order[0]].sol,nodes[order[1]].sol))
+				{	A = order[0]; B = order[1]; C = order[2]; D = order[3];	}
+				else if(SameFace(nodes[order[0]].sol,nodes[order[2]].sol))
+				{	A = order[0]; B = order[2]; C = order[1]; D = order[3];	}
+				else if(SameFace(nodes[order[0]].sol,nodes[order[3]].sol))
+				{	A = order[0]; B = order[3]; C = order[2]; D = order[1];	}
+				else if(SameFace(nodes[order[1]].sol,nodes[order[2]].sol))
+				{	A = order[1]; B = order[2]; C = order[0]; D = order[3];	}
+				else if(SameFace(nodes[order[1]].sol,nodes[order[3]].sol))
+				{	A = order[1]; B = order[3]; C = order[0]; D = order[2];	}
+				else if(SameFace(nodes[order[2]].sol,nodes[order[3]].sol))
+				{	A = order[2]; B = order[3]; C = order[0]; D = order[1];	}
+				else
+				{
+					System.err.printf("link_sing: 4 id nodes but non on same face\n");
+					A = order[0]; B = order[1]; C = order[2]; D = order[3];
+				}
+				calc_pos_actual(nodes[A].sol,vecs[0]);
+				calc_pos_actual(nodes[B].sol,vecs[1]);
+				calc_pos_actual(nodes[C].sol,vecs[2]);
+				calc_pos_actual(nodes[D].sol,vecs[3]);
+				dist1x = vecs[0][0] - vecs[1][0]; dist1y = vecs[0][1] - vecs[1][1]; dist1z = vecs[0][2] - vecs[1][2];
+				dist2x = vecs[0][0] - vecs[2][0]; dist2y = vecs[0][1] - vecs[2][1]; dist2z = vecs[0][2] - vecs[2][2];
+				dist3x = vecs[0][0] - vecs[3][0]; dist3y = vecs[0][1] - vecs[3][1]; dist3z = vecs[0][2] - vecs[3][2];
+				dist4x = vecs[1][0] - vecs[2][0]; dist4y = vecs[1][1] - vecs[2][1]; dist4z = vecs[1][2] - vecs[2][2];
+				dist5x = vecs[1][0] - vecs[3][0]; dist5y = vecs[1][1] - vecs[3][1]; dist5z = vecs[1][2] - vecs[3][2];
+				dist6x = vecs[2][0] - vecs[3][0]; dist6y = vecs[2][1] - vecs[3][1]; dist6z = vecs[2][2] - vecs[3][2];
+
+				distAB = sqrt(dist1x*dist1x+dist1y*dist1y+dist1z*dist1z);
+				distAC = sqrt(dist2x*dist2x+dist2y*dist2y+dist2z*dist2z);
+				distAD = sqrt(dist3x*dist3x+dist3y*dist3y+dist3z*dist3z);
+				distBC = sqrt(dist4x*dist4x+dist4y*dist4y+dist4z*dist4z);
+				distBD = sqrt(dist5x*dist5x+dist5y*dist5y+dist5z*dist5z);
+				distCD = sqrt(dist6x*dist6x+dist6y*dist6y+dist6z*dist6z);
+	#ifdef PRINT_LINK_SING
+				System.err.printf("4 indentical nodes, distances %f %f %f %f %f %f\n",distAB,distAC,distAD,distBC,distBD,distCD);
+	#endif
+				/* found 4 nodes with identical sign pattern */
+
+				if(distAC < distBC && distBD < distAD )
+				{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes %d, %d and  %d, %d\n",A,C,B,D);
+	#endif
+					add_node_link_simple(box,nodes[A],nodes[C]);
+					add_node_link_simple(box,nodes[B],nodes[D]);
+					done[A] = done[B] = done[C] = done[D] = 1;
+				}
+				else if(distAC > distBC && distBD > distAD )
+				{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes %d, %d and  %d, %d\n",A,D,B,C);
+	#endif
+					add_node_link_simple(box,nodes[A],nodes[D]);
+					add_node_link_simple(box,nodes[B],nodes[C]);
+					done[A] = done[B] = done[C] = done[D] = 1;
+				}
+				else
+				{
+					System.err.printf("link_sing: wierd distances\n");
+					add_node_link_simple(box,nodes[A],nodes[C]);
+					add_node_link_simple(box,nodes[B],nodes[D]);
+					done[A] = done[B] = done[C] = done[D] = 1;
+				}
+					
+			}
+			force_deriv_cross_sing:
+	System.err.printf("At fdcs: unmatched %d\n",unmatched);
+	#ifdef NOT_DEF
+			for(i=0;i<count;++i)
+			{
+				if(done[i]) continue;
+				for(j=i+1;j<count;++j)
+				{
+					if(done[i] || done[j]) continue;
+					if(MatchNodes(i,j))
+					{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes fdcs: %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+						add_node_link_simple(box,nodes[i],nodes[j]);
+						done[i] = done[j] = 1;
+					}
+				}
+			}
+	#endif
+		}
+
+		unmatched=0;
+		for(i=0;i<count;++i)
+			if(!done[i]) ++unmatched;
+		if(unmatched == 0 ) return true;
+
+		System.err.printf("unmatched %d\n",unmatched);
+	#ifdef PRINT_LINK_SING
+		print_box_brief(box);
+	#endif
+
+		for(i=0;i<count;++i)
+		{
+			if(done[i]) continue;
+			for(j=i+1;j<count;++j)
+			{
+				if(done[i] || done[j]) continue;
+				if( MatchNodes(i,j) 
+				 && (nodes[i].sol.dx != 0 || nodes[i].sol.dy != 0 || nodes[i].sol.dz != 0 ) )
+				{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes fdcs: %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					done[i] = done[j] = 1;
+				}
+			}
+		}
+		unmatched=0;
+		for(i=0;i<count;++i)
+			if(!done[i]) ++unmatched;
+		System.err.printf("unmatched %d all zero %d\n",unmatched,all_zero_count);
+		if(unmatched == 0 ) return true;
+
+		if(all_zero_count == 1)
+		{
+			int zero_index;
+			double vec[3];
+
+			for(i=0;i<count;++i)
+				if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 )
+					zero_index = i;
+			calc_pos_in_box(box,nodes[zero_index].sol,vec);
+			sol.root = vec[0]; sol.root2 = vec[1]; sol.root3 = vec[2];
+			midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+			++nodecount; ++nodemax; ++nodenew;
+	#endif
+			add_sing(box,sol);
+			midnode.next = null;
+			midnode.sol = sol;
+			midnode.status = NODE;
+			for( i=0; i<count; ++i)
+			{
+				if(!done[i])
+				{
+					add_node_link_simple(box,nodes[i],midnode);
+				}
+			}
+	#ifdef PRINT_LINK_SING
+	System.err.printf("link_sing: one all zero\n");
+	print_box_brief(box);
+	#endif
+			return true;
+		}
+					
+		/* now if converged to sing add that. */
+
+		   if(flag)
+		   {
+			if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+			{
+				System.err.printf("link_sing: odd posn B %f %f %f\n",sol.root,sol.root2,sol.root3);
+				print_box_brief(box);
+			}
+			add_sing(box,sol);
+
+			if( count == 0 ) return true;
+			midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+			++nodecount; ++nodemax; ++nodenew;
+	#endif
+			midnode.next = null;
+			midnode.sol = sol;
+			midnode.status = NODE;
+			for( i=0; i<count; ++i)
+			{
+				add_node_link_simple(box,midnode,nodes[i]);
+			}
+		        return true;
+		   }
+
+		/* Now lets get really hacky if there is a node (1,0,0) link it
+			to all nodes (1,+/-1,0) and (1,0,+/-0) 
+		   then if there is a node (0,0,0) link to all undone nodes
+			and all nodes like (1,0,0) 
+		*/
+
+		for(i=0;i<count;++i)
+		{
+			if(done[i]) continue;
+			for(j=i+1;j<count;++j)
+			{
+				if(done[i] || done[j]) continue;
+				if(MatchNodes(i,j))
+				{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes %d and %d done %d %d\n",i,j,done[i],done[j]);
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					done[i] = done[j] = 1;
+	#endif
+				}
+			}
+		}
+
+		/* Link 	(1,1,0) to (1,0,0) or (0,1,0) */
+
+		for(i=0;i<count;++i)
+		{
+			if(done[i]) continue;
+			if( (nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 )
+			 || (nodes[i].sol.dx == 0 && nodes[i].sol.dz == 0 )
+			 || (nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 ) ) continue;
+			for(j=0;j<count;++j)
+			{
+				if(j==i) continue;
+				if(nodes[j].sol.dx == 0 && nodes[j].sol.dy == 0 && nodes[j].sol.dz == 0)
+					continue;
+				if(SameFace(nodes[i].sol,nodes[j].sol) ) continue;
+				if(nodes[i].sol.dx == 0)
+				{
+					if(nodes[j].sol.dx != 0) continue;
+					if(nodes[j].sol.dy != 0 && nodes[j].sol.dy != nodes[i].sol.dy )
+						continue;
+					if(nodes[j].sol.dz != 0 && nodes[j].sol.dz != nodes[i].sol.dz )
+						continue;
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes2a %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					done[i] = done[j] = 1;
+					break;
+				}
+				if(nodes[i].sol.dy == 0)
+				{
+					if(nodes[j].sol.dy != 0) continue;
+					if(nodes[j].sol.dx != 0 && nodes[j].sol.dx != nodes[i].sol.dx )
+						continue;
+					if(nodes[j].sol.dz != 0 && nodes[j].sol.dz != nodes[i].sol.dz )
+						continue;
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes2b %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					done[i] = done[j] = 1;
+					break;
+				}
+				if(nodes[i].sol.dz == 0)
+				{
+					if(nodes[j].sol.dz != 0) continue;
+					if(nodes[j].sol.dx != 0 && nodes[j].sol.dx != nodes[i].sol.dx )
+						continue;
+					if(nodes[j].sol.dy != 0 && nodes[j].sol.dy != nodes[i].sol.dy )
+						continue;
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes2c %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+					add_node_link_simple(box,nodes[i],nodes[j]);
+					done[i] = done[j] = 1;
+					break;
+				}
+			}
+		}
+					
+				
+		for(i=0;i<count;++i)
+		{
+			if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 && nodes[i].sol.dz == 0 )
+			{
+				int j;
+
+				for(j=0;j<count;++j)
+				{
+					if(j==i) continue;
+					if( !done[j] && ! SameFace(nodes[i].sol,nodes[j].sol) )
+	/*
+					 || (nodes[j].sol.dx != 0 && nodes[j].sol.dy == 0 && nodes[j].sol.dz == 0 )
+					 || (nodes[j].sol.dx == 0 && nodes[j].sol.dy != 0 && nodes[j].sol.dz == 0 )
+					 || (nodes[j].sol.dx == 0 && nodes[j].sol.dy == 0 && nodes[j].sol.dz != 0 ) )
+	*/
+					{
+	#ifdef PRINT_LINK_SING
+		System.err.printf("Linking nodes3 %d and %d done %d %d\n",i,j,done[i],done[j]);
+	#endif
+						add_node_link_simple(box,nodes[i],nodes[j]);
+						done[i] = done[j] = 1;
+					}
+				}
+	#ifdef FAKE_SINGS
+				if(done[i])
+				{
+					add_sing(box,nodes[i].sol);
+				}
+	#endif
+			}
+		}
+
+		unmatched = 0;
+		for(i=0;i<count;++i)
+			if(!done[i])
+			{
+	#ifdef PRINT_LINK_SING
+				print_node(nodes[i]);
+	#endif
+				++unmatched;
+			}
+		if(unmatched==0 || unmatched == 1) return true;
+		System.err.printf("unmatched %d\n",unmatched);
+		if(global_mode == MODE_KNOWN_SING) return true;
+
+		force_sing:
+
+		System.err.printf("force_sing: (%d,%d,%d)/%d\n",box.xl,box.yl,box.zl,box.denom);
+
+		if(global_mode == MODE_KNOWN_SING)
+			return true;
+
+		pos_x = pos_y = pos_z = 0.0;
+		for( i=0; i<count; ++i)
+		{
+			if(!done[i])
+			{
+			calc_pos_in_box(box,nodes[i].sol,vec0);
+			pos_x +=  vec0[0];
+			pos_y +=  vec0[1];
+			pos_z +=  vec0[2];
+			}
+		}
+		pos_x /= unmatched;
+		pos_y /= unmatched;
+		pos_z /= unmatched;
+		sol.root = pos_x;
+		sol.root2 = pos_y;
+		sol.root3 = pos_z;
+		if(sol.root < 0.0 || sol.root > 1.0 || sol.root2 < 0.0 || sol.root2 > 1.0 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+		{
+			System.err.printf("link_sing: odd posn C %f %f %f\n",sol.root,sol.root2,sol.root3);
+	#ifdef PRINT_LINK_SING
+			print_box_brief(box);
+	#endif
+		}
+		add_sing(box,sol);
+
+		midnode = grballoc(node_info);
+	#ifdef TEST_ALLOC
+			++nodecount; ++nodemax; ++nodenew;
+	#endif
+		midnode.next = null;
+		midnode.sol = sol;
+		midnode.status = NODE;
+		for( i=0; i<count; ++i)
+		{
+			if(!done[i])
+				add_node_link_simple(box,midnode,nodes[i]);
+		}
+		return true;
+	}
+
+	int link_nodes_reduce(Box_info box,Bern3D bb,Bern3D dx,Bern3D dy,Bern3D dz)
+	{
+		octbern3D aa;
+		int flag;
+
+		aa = reduce3D(bb);
+		sub_devide_box(box);
+		split_box(box,box.lfd,box.rfd,box.lbd,box.rbd,
+			 box.lfu,box.rfu,box.lbu,box.rbu);
+
+		find_all_faces(box.lfd,aa.lfd);
+		find_all_faces(box.lfu,aa.lfu);
+		find_all_faces(box.lbd,aa.lbd);
+		find_all_faces(box.lbu,aa.lbu);
+		find_all_faces(box.rfd,aa.rfd);
+		find_all_faces(box.rfu,aa.rfu);
+		find_all_faces(box.rbd,aa.rbd);
+		find_all_faces(box.rbu,aa.rbu);
+
+		box.lfd.status = FOUND_FACES;
+		box.rbd.status = FOUND_FACES;
+		box.rfu.status = FOUND_FACES;
+		box.rfd.status = FOUND_FACES;
+		box.lbu.status = FOUND_FACES;
+		box.lfu.status = FOUND_FACES;
+		box.lbd.status = FOUND_FACES;
+		box.rbu.status = FOUND_FACES;
+
+		flag = link_nodes(box.lfd,aa.lfd)
+		&& link_nodes(box.rfd,aa.rfd)
+		&& link_nodes(box.lbd,aa.lbd)
+		&& link_nodes(box.rbd,aa.rbd)
+		&& link_nodes(box.lfu,aa.lfu)
+		&& link_nodes(box.rfu,aa.rfu)
+		&& link_nodes(box.lbu,aa.lbu)
+		&& link_nodes(box.rbu,aa.rbu);
+	/*
+	#ifdef FACETS
+		combine_facets(box);
+	#endif
+	*/
+		free_octbern3D(aa);
+		return(flag);
+	}
+
+	/*
+	 * Function:    link_nodes(box,big_box)
+	 * action:      links together the nodes surronding a box.
+	 *              adds the links to the list in big_box.
+	 *		Returns false on interupt
+	 */
+
+
+	int link_nodes(Box_info box,Bern3D bb)
+	{
+		int f1,f2,f3,count;
+		node_info nodes[8];
+		Bern3D dx,*dy,*dz;
+		int flag = true;
+
+		if( check_interupt( null ) ) return(false);
+		if( allonesign3D(bb) ) return(true);
+
+		dx = diffx3D(bb);
+		dy = diffy3D(bb);
+		dz = diffz3D(bb);
+		f1 = allonesign3D(dx);
+		f2 = allonesign3D(dy);
+		f3 = allonesign3D(dz);	
+
+		if( f1 && f2 && f3 ) goto fini_nodes;  /* no chance of links */
+
+		count = get_nodes_on_box_faces(box,nodes);
+
+	#ifdef PRINT_LINK_NODES
+	System.err.printf("link_nodes (%d,%d,%d)/%d: dx %d %d %d count %d\n",
+		box.xl,box.yl,box.zl,box.denom,f1,f2,f3,count);
+	print_box_brief(box);
+	#endif
+		if( count == 0 )
+		{
+			sol_info sols[2];
+
+			/* test for isolated zeros: require !f1 !f2 !f3 and */
+			/* no solutions on faces.			    */
+
+			if( f1 || f2 || f3 ) goto fini_nodes;
+
+			if( get_sols_on_face(box.ll,sols)
+			 || get_sols_on_face(box.rr,sols)
+			 || get_sols_on_face(box.ff,sols)
+			 || get_sols_on_face(box.bb,sols)
+			 || get_sols_on_face(box.dd,sols)
+			 || get_sols_on_face(box.uu,sols) )
+			{
+				/* non zero count return */
+
+				goto fini_nodes;
+			}
+
+			/* no solutions, posible isolated zero */
+		}
+		else if( count == 2 )
+		{
+			/* Only add links whose derivs match */
+
+			if( MatchNodes(0,1)
+			 && ( nodes[0].sol.dx != 0 || nodes[0].sol.dy != 0 
+					|| nodes[0].sol.dz != 0 ) )
+			{
+				add_node_link(box,nodes[0],nodes[1]);
+				goto fini_nodes;
+			}
+		}
+		else if( count == 4 )
+		{
+			int i;
+			/*** posible for two different node_links across box ***/
+
+			nodes[2] = get_nth_node_on_box(box,3);
+			nodes[3] = get_nth_node_on_box(box,4);
+
+			for(i=0;i<4;++i)
+				if(nodes[i].sol.dx == 0 && nodes[i].sol.dy == 0 
+					&& nodes[i].sol.dz == 0 )
+					goto reduce_nodes;
+
+			if(MatchNodes(0,1) && MatchNodes(2,3) )
+			{
+				if(MatchNodes(0,2)) goto reduce_nodes;
+
+				add_node_link(box,nodes[0],nodes[1]);
+				add_node_link(box,nodes[2],nodes[3]);
+				goto fini_nodes;
+			}
+			if(MatchNodes(0,2) && MatchNodes(1,3) )
+			{
+				if(MatchNodes(0,1)) goto reduce_nodes;
+
+				add_node_link(box,nodes[0],nodes[2]);
+				add_node_link(box,nodes[1],nodes[3]);
+				goto fini_nodes;
+			}
+			if(MatchNodes(0,3) && MatchNodes(1,2) )
+			{
+				if(MatchNodes(0,2)) goto reduce_nodes;
+
+				add_node_link(box,nodes[0],nodes[3]);
+				add_node_link(box,nodes[1],nodes[2]);
+				goto fini_nodes;
+			}
+		}
+
+		reduce_nodes:
+
+		/*** Too dificult to handle, either sub-devide or create a node ***/
+
+		if( box.denom >= LINK_SING_LEVEL )
+			flag = link_node_sing(box,bb,dx,dy,dz,f1,f2,f3,count);
+		else
+		{
+			flag = link_nodes_reduce(box,bb,dx,dy,dz);
+			free_bern3D(dx);
+			free_bern3D(dy);
+			free_bern3D(dz);
+			return(flag);
+		}
+
+		fini_nodes:
+	#ifdef PRINT_LINK_SING
+	System.err.printf("link_nodes: done %d %d %d count %d\n",f1,f2,f3,count);
+	print_box_brief(box);
+	#endif
+
+		if(global_lf)
+		{
+			make_facets(box);
+			draw_box(box);
+		}
+
+		free_bern3D(dx);
+		free_bern3D(dy);
+		free_bern3D(dz);
+		return(flag);
+	}
+
+	/* All cals in resaled function */
+
+	void calc_pos_norm(sol_info sol,double vec[3],double norm[3])
+	{
+	        calc_pos(sol,vec);
+	        
+	        if(sol.dx == 0) norm[0] = 0.0;
+	        else             norm[0] = evalbern3D(CC,vec);
+	        if(sol.dy == 0) norm[1] = 0.0;
+	        else             norm[1] = evalbern3D(DD,vec);
+	        if(sol.dz == 0) norm[2] = 0.0;
+	        else             norm[2] = evalbern3D(EE,vec);
+	}
+
+	/** finds the pos in original domain **/
+
+	void calc_pos_actual(sol_info sol,double vec[3])
+	{
+	        calc_pos(sol,vec);
+	        
+		/* The above is of corse incorrect as its been incorectly scaled */
+
+		vec[0] = region.xmin + vec[0] * (region.xmax-region.xmin);
+		vec[1] = region.ymin + vec[1] * (region.ymax-region.ymin);
+		vec[2] = region.zmin + vec[2] * (region.zmax-region.zmin);
+	}
+
+	/** finds the pos and norm in original domain **/
+
+	void calc_pos_norm_actual(sol_info sol,double vec[3],double norm[3])
+	{
+	        calc_pos_norm(sol,vec,norm);
+	        
+		/* The above is of corse incorrect as its been incorectly scaled */
+
+		vec[0] = region.xmin + vec[0] * (region.xmax-region.xmin);
+		vec[1] = region.ymin + vec[1] * (region.ymax-region.ymin);
+		vec[2] = region.zmin + vec[2] * (region.zmax-region.zmin);
+
+		norm[0] = norm[0] / (region.xmax-region.xmin);
+		norm[1] = norm[1] / (region.ymax-region.ymin);
+		norm[2] = norm[2] / (region.zmax-region.zmin);
+	}
+
+	/** Finds the sols corespondig to the know singularities **/
+
+	extern void calc_known_sings(HPoint3 *pl,int num_know_sings);
+
+	void calc_known_sings(HPoint3 *pl,int nks)
+	{
+		int i;
+
+		num_known_sings = nks;
+		known_sings = (sol_info *) malloc(sizeof(sol_info ) * num_known_sings);
+		for(i=0;i<num_known_sings;++i)
+		{
+			if( pl[i].x < region.xmin
+			 || pl[i].x > region.xmax
+			 || pl[i].y < region.ymin
+			 || pl[i].y > region.ymax
+			 || pl[i].z < region.zmin
+			 || pl[i].z > region.zmax )
+			{
+				System.err.printf("Sing outside box %f %f %f\n",pl[i].x,pl[i].y,pl[i].z);
+				known_sings[i] = make_sol3(BOX,-1,-1,-1,LINK_SING_LEVEL,0.0,0.0,0.0);
+			}
+			else
+			{
+				double xbox,ybox,zbox;
+				int xl,yl,zl;
+
+				xbox = LINK_SING_LEVEL * (pl[i].x - region.xmin) / (region.xmax - region.xmin);
+				ybox = LINK_SING_LEVEL * (pl[i].y - region.ymin) / (region.ymax - region.ymin);
+				zbox = LINK_SING_LEVEL * (pl[i].z - region.zmin) / (region.zmax - region.zmin);
+				xl = (int) floor(xbox);
+				yl = (int) floor(ybox);
+				zl = (int) floor(zbox);
+				known_sings[i] = make_sol3(BOX,xl,yl,zl,LINK_SING_LEVEL,
+					xbox - xl,ybox - yl,zbox-zl);
+				known_sings[i].dx = 0;
+				known_sings[i].dy = 0;
+				known_sings[i].dz = 0;
+
+	/*
+	*/
+				System.err.printf("Known sing ");
+				print_sol(known_sings[i]);
+			}
+		}
+	}
+
+	/**
+
+	To converge on to a surface use:
+
+	- (f / ( df . df ) ) df;
+
+	to converge to a singularity point could use:
+
+	-(row1.df,row2.df,row3.df) / det;
+	row1= ( d*ff-e^2, -(b*ff-c*e),  (b*e-c*d));
+	row2 = (-(b*ff-c*e),  (a*ff-c^2), -(a*e-b*c));
+	row3 = ( (b*e-c*d), -(a*e-b*c),  (a*d-b^2));
+	det = (a*d*ff-a*e^2-b^2*ff+2*b*c*e-c^2*d);
+	a = diff(fx,x); b = diff(fx,y); c = diff(fx,z);
+	                      d = diff(fy,y); e = diff(fy,z);
+			            ff = diff(fz,z);
+	df = (fx,fy,fz);
+	fx = diff(f,x); fy = diff(f,y); fz = diff(f,z);
+	f = x^2 y - y^3 - z^2;
+
+	i.e.
+
+	M^(-1) df where
+	M = d2f.
+
+	Formula calculated from 
+	f(x+v) = f(x) + v . df = 0
+	v = gamma df
+	hence 
+	f(x) + gamma df . df = 0;
+	so
+		v = -f(x)/(df.df) df
+
+	and
+	dfx(x+v) = dfx(x) + v . d2fx 
+	dfy(x+v) = dfy(x) + v . d2fy
+	dfz(x+v) = dfz(x) + v . d2fz
+	i.e.
+	df(x+v) = df(x) + d2f<**> v
+	        = df(x) + M v
+	so
+	v = -M^(-1) df
+
+	*/
+
+	/** converge_sing
+	 *  converges to a singularity point inside a box
+	 * returns false if converged to a point outside the box.
+	 **/
+
+	#define PRINT_CS_VEC() {	\
+	System.err.printf("\t%6.3f %6.3f %6.3f\t",vec[0],vec[1],vec[2]); \
+	System.err.printf("%6.3f %6.3f %6.3f\t",	\
+		region.xmin + vec[0] * (region.xmax-region.xmin), 	\
+		region.ymin + vec[1] * (region.ymax-region.ymin),	\
+		region.zmin + vec[2] * (region.zmax-region.zmin));	\
+	System.err.printf("%6.3f %6.3f %6.3f\n",	\
+		vec[0] * sol.denom - sol.xl,	\
+		vec[1] * sol.denom - sol.yl,	\
+		vec[2] * sol.denom - sol.zl);	}
+	 
+	int converge_sing_old(Box_info box,sol_info sol,int signDx,int signDy,int signDz);
+
+	int find_known_sing(sol_info sol)
+	{
+		int i;
+		if(global_mode != MODE_KNOWN_SING)
+			return false;
+
+		for(i=0;i<num_known_sings;++i)
+		{
+			if( sol.xl == known_sings[i].xl
+			 && sol.yl == known_sings[i].yl
+			 && sol.zl == known_sings[i].zl )
+			{
+	#ifdef PRINT_CONVERGE
+	#endif
+	System.err.printf("converge_sing: matched ");
+	print_sol(known_sings[i]);
+				sol.root = known_sings[i].root;
+				sol.root2 = known_sings[i].root2;
+				sol.root3 = known_sings[i].root3;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	int converge_sing(Box_info box,sol_info sol,int signDx,int signDy,int signDz)
+	{
+		if(global_mode == MODE_KNOWN_SING)
+			return find_known_sing(sol);
+		else
+			return converge_sing_old(box,sol,signDx,signDy,signDz);
+	}
+		
+	int converge_sing_old(Box_info box,sol_info sol,int signDx,int signDy,int signDz)
+	{
+		double vec[3],oldvec[3];
+		double val,dx,dy,dz,dxx=0.0,dxy=0.0,dxz=0.0,dyy=0.0,dyz=0.0,dzz=0.0;
+		int i;
+		double sumsq;
+
+		calc_pos(sol,vec);
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("converge_sing: ");
+	print_sol(sol);
+	System.err.printf("init"); PRINT_CS_VEC();
+	#endif	
+
+		for(i=0;i<10;++i)
+		{
+			oldvec[0] = vec[0];
+			oldvec[1] = vec[1];
+			oldvec[2] = vec[2];
+
+			/* first converge onto surface */
+
+			val = evalbern3D(BB,vec);
+			dx  = evalbern3D(CC,vec);
+			dy  = evalbern3D(DD,vec);
+			dz  = evalbern3D(EE,vec);
+			sumsq = dx * dx + dy * dy + dz * dz;
+			vec[0] -= val * dx / sumsq;
+			vec[1] -= val * dy / sumsq;
+			vec[2] -= val * dz / sumsq;
+		
+	#ifdef PRINT_CONVERGE
+	System.err.printf("%d",i); PRINT_CS_VEC();
+	#endif	
+
+			/* then converge onto dx */
+
+			if(!signDx)
+			{
+				dx  = evalbern3D(CC,vec);
+				dxx = evalbern3D(Dxx,vec);
+				dxy = evalbern3D(Dxy,vec);
+				dxz = evalbern3D(Dxz,vec);
+				sumsq = dxx * dxx + dxy * dxy + dxz * dxz;
+				vec[0] -= dx * dxx / sumsq;
+				vec[1] -= dx * dxy / sumsq;
+				vec[2] -= dx * dxz / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dx"); PRINT_CS_VEC();
+	#endif	
+			}
+
+
+			/* then converge onto dy */
+
+			if(!signDy)
+			{
+				dy  = evalbern3D(DD,vec);
+				dxy = evalbern3D(Dxy,vec);
+				dyy = evalbern3D(Dyy,vec);
+				dyz = evalbern3D(Dyz,vec);
+				sumsq = dxy * dxy + dyy * dyy + dyz * dyz;
+				vec[0] -= dy * dxy / sumsq;
+				vec[1] -= dy * dyy / sumsq;
+				vec[2] -= dy * dyz / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dy"); PRINT_CS_VEC();
+	#endif	
+			}
+
+			/* then converge onto dz */
+
+			if(!signDz)
+			{
+				dy  = evalbern3D(DD,vec);
+				dxz = evalbern3D(Dxz,vec);
+				dyz = evalbern3D(Dyz,vec);
+				dzz = evalbern3D(Dzz,vec);
+				sumsq = dxz * dxz + dyz * dyz + dzz * dzz;
+				vec[0] -= dz * dxz / sumsq;
+				vec[1] -= dz * dyz / sumsq;
+				vec[2] -= dz * dzz / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dz"); PRINT_CS_VEC();
+	#endif	
+			}
+
+			if( vec[0] != vec[0] )
+			{
+				System.err.printf("NaN in converge_sing\n");
+				System.err.printf("%f %f, %f %f %f, %f %f %f %f %f %f\n",
+					sumsq,val, dx,dy,dz, dxx,dxy,dxz,dyy,dyz,dzz);
+				PRINT_CS_VEC();
+				print_sol(sol);
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				vec[2] = oldvec[2];
+				calc_relative_pos(sol,vec);
+				return true;	/* we've found a zero! */
+			}
+
+			if( 
+				vec[0] * sol.denom - sol.xl < 0.0 
+			 ||	vec[0] * sol.denom - sol.xl > 1.0 
+			 ||	vec[1] * sol.denom - sol.yl < 0.0 	
+			 ||	vec[1] * sol.denom - sol.yl > 1.0 	
+		 	 ||	vec[2] * sol.denom - sol.zl < 0.0
+			 ||	vec[2] * sol.denom - sol.zl > 1.0 )
+			{
+	#ifdef PRINT_CONVERGE
+				System.err.printf("converge_sing failed\n%f %f, %f %f %f, %f %f %f %f %f %f\n",
+					sumsq,val,dx,dy,dz,dxx,dxy,dxz,dyy,dyz,dzz);
+	#endif	
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				vec[2] = oldvec[2];
+				calc_relative_pos(sol,vec);
+				return false;			
+			}
+			
+		}
+		calc_relative_pos(sol,vec);
+	#ifdef PRINT_CONVERGE
+	System.err.printf("converge_sing done: ");
+	print_sol(sol);
+	#endif	
+
+		if( sol.root  < 0.0 || sol.root  > 1.0
+		 || sol.root2 < 0.0 || sol.root2 > 1.0
+		 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+			return false;
+		else
+			return true;
+	}
+
+	int converge_sing2(Box_info box,sol_info sol,Bern3D bb,Bern3D A,Bern3D B,Bern3D C)
+	{
+		double vec[3],oldvec[3];
+		double val,dx,dy,dz;
+		int i;
+		double sumsq;
+		Bern3D bbx=null,*bby=null,*bbz=null,*Ax=null,*Ay=null,*Az=null,
+			*Bx=null,*By=null,*Bz=null,*Cx=null,*Cy=null,*Cz=null;
+
+		vec[0] = sol.root;
+		vec[1] = sol.root2;
+		vec[2] = sol.root3;
+		if(bb!=null) { bbx = diffx3D(bb); bby = diffy3D(bb); bbz = diffz3D(bb); }
+		if(A!=null) { Ax = diffx3D(A); Ay = diffy3D(A); Az = diffz3D(A); }
+		if(B!=null) { Bx = diffx3D(B); By = diffy3D(B); Bz = diffz3D(B); }
+		if(C!=null) { Cx = diffx3D(C); Cy = diffy3D(C); Cz = diffz3D(C); }
+	#ifdef PRINT_CONVERGE
+	System.err.printf("converge_sing2: ");
+	print_sol(sol);
+	System.err.printf("init"); PRINT_CS_VEC();
+	#endif	
+
+		for(i=0;i<10;++i)
+		{
+			oldvec[0] = vec[0];
+			oldvec[1] = vec[1];
+			oldvec[2] = vec[2];
+
+			/* first converge onto surface */
+
+			val = evalbern3D(bb,vec);
+			dx  = evalbern3D(bbx,vec);
+			dy  = evalbern3D(bby,vec);
+			dz  = evalbern3D(bbz,vec);
+			sumsq = dx * dx + dy * dy + dz * dz;
+			vec[0] -= val * dx / sumsq;
+			vec[1] -= val * dy / sumsq;
+			vec[2] -= val * dz / sumsq;
+		
+	#ifdef PRINT_CONVERGE
+	System.err.printf("%d",i); PRINT_CS_VEC();
+	#endif	
+
+			/* then converge onto dx */
+
+			if(A!=null)
+			{
+				val = evalbern3D(A,vec);
+				dx  = evalbern3D(Ax,vec);
+				dy  = evalbern3D(Ay,vec);
+				dz  = evalbern3D(Az,vec);
+				sumsq = dx * dx + dy * dy + dz * dz;
+				vec[0] -= val * dx / sumsq;
+				vec[1] -= val * dy / sumsq;
+				vec[2] -= val * dz / sumsq;
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dx"); PRINT_CS_VEC();
+	#endif	
+			}
+
+			if(B!=null)
+			{
+				val = evalbern3D(B,vec);
+				dx  = evalbern3D(Bx,vec);
+				dy  = evalbern3D(By,vec);
+				dz  = evalbern3D(Bz,vec);
+				sumsq = dx * dx + dy * dy + dz * dz;
+				vec[0] -= val * dx / sumsq;
+				vec[1] -= val * dy / sumsq;
+				vec[2] -= val * dz / sumsq;
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dx"); PRINT_CS_VEC();
+	#endif	
+			}
+
+			if(C!=null)
+			{
+				val = evalbern3D(C,vec);
+				dx  = evalbern3D(Cx,vec);
+				dy  = evalbern3D(Cy,vec);
+				dz  = evalbern3D(Cz,vec);
+				sumsq = dx * dx + dy * dy + dz * dz;
+				vec[0] -= val * dx / sumsq;
+				vec[1] -= val * dy / sumsq;
+				vec[2] -= val * dz / sumsq;
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dx"); PRINT_CS_VEC();
+	#endif	
+			}
+
+			if( vec[0] != vec[0] )
+			{
+				System.err.printf("NaN in converge_sing2\n");
+				System.err.printf("%f %f %f %f %f\n",val,dx,dy,dz,sumsq);
+				print_sol(sol);
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				vec[2] = oldvec[2];
+				sol.root = vec[0];
+				sol.root2 = vec[1];
+				sol.root3 = vec[2];
+				return false;			
+			}
+
+			if( 
+				vec[0] < 0.0 
+			 ||	vec[0] > 1.0 
+			 ||	vec[1] < 0.0 	
+			 ||	vec[1] > 1.0 	
+		 	 ||	vec[2] < 0.0
+			 ||	vec[2] > 1.0 )
+			{
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				vec[2] = oldvec[2];
+				sol.root = vec[0];
+				sol.root2 = vec[1];
+				sol.root3 = vec[2];
+				return false;			
+			}
+			
+		}
+	#ifdef PRINT_CONVERGE
+	System.err.printf("converge_sing2 done: ");
+	print_sol(sol);
+	#endif	
+		sol.root = vec[0];
+		sol.root2 = vec[1];
+		sol.root3 = vec[2];
+
+		if( sol.root  < 0.0 || sol.root  > 1.0
+		 || sol.root2 < 0.0 || sol.root2 > 1.0
+		 || sol.root3 < 0.0 || sol.root3 > 1.0 )
+			return false;
+		return true;
+	}
+
+	#define PRINT_CN_VEC() {double v=0.0,vx=0.0,vy=0.0,vz=0.0;	\
+	v = evalbern2D(bb,vec);	\
+	if(!signDx) vx = evalbern2D(dx,vec);	\
+	if(!signDy) vy = evalbern2D(dy,vec);	\
+	if(!signDz) vz = evalbern2D(dz,vec);	\
+	System.err.printf("\t%6.3f %6.3f\t%g %g %g %g\n\t",vec[0],vec[1],v,vx,vy,vz); \
+	if(sol.type == FACE_RR || sol.type == FACE_LL )	\
+	System.err.printf("%f %f %f\n",	\
+		region.xmin + ( ((double) sol.xl)/sol.denom ) * (region.xmax-region.xmin), 	\
+		region.ymin + ( (sol.yl + vec[0])/sol.denom ) * (region.ymax-region.ymin),	\
+		region.zmin + ( (sol.zl + vec[1])/sol.denom ) * (region.zmax-region.zmin));	\
+	else if(sol.type == FACE_BB || sol.type == FACE_FF)	\
+	System.err.printf("%f %f %f\n",	\
+		region.xmin + ( (sol.xl + vec[0])/sol.denom ) * (region.xmax-region.xmin), 	\
+		region.ymin + ( ((double) sol.yl)/sol.denom ) * (region.ymax-region.ymin),	\
+		region.zmin + ( (sol.zl + vec[1])/sol.denom ) * (region.zmax-region.zmin));	\
+	else if(sol.type == FACE_UU || sol.type == FACE_DD)	\
+	System.err.printf("%f %f %f\n",	\
+		region.xmin + ( (sol.xl + vec[0])/sol.denom ) * (region.xmax-region.xmin), 	\
+		region.ymin + ( (sol.yl + vec[1])/sol.denom ) * (region.ymax-region.ymin),	\
+		region.zmin + ( ((double) sol.zl)/sol.denom ) * (region.zmax-region.zmin));	\
+	}
+
+	int converge_node(sol_info sol,
+		Bern2D bb,Bern2D dx,Bern2D dy,Bern2D dz,
+		int signDx,int signDy,int signDz)
+	{
+		double vec[2],oldvec[2];
+		Bern2D bb_x,*bb_y;
+		Bern2D dx_x=null,*dx_y=null, *dy_x=null,*dy_y=null, *dz_x=null, *dz_y=null;
+		int i,flag=true;
+		double sumsq,a,b,val;
+
+		bb_x = diffx2D(bb); bb_y = diffy2D(bb);
+		if(!signDx) { dx_x = diffx2D(dx); dx_y = diffy2D(dx); }
+		if(!signDy) { dy_x = diffx2D(dy); dy_y = diffy2D(dy); }
+		if(!signDz) { dz_x = diffx2D(dz); dz_y = diffy2D(dz); }
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("converge_node: ");
+	print_sol(sol);
+	/* printbern2D(bb); */
+	System.err.printf("init"); PRINT_CN_VEC();
+	#endif	
+		vec[0] = sol.root;
+		vec[1] = sol.root2;
+
+		for(i=0;i<10;++i)
+		{
+			oldvec[0] = vec[0];
+			oldvec[1] = vec[1];
+
+			/* first converge onto surface */
+
+			val = evalbern2D(bb,vec);
+			a   = evalbern2D(bb_x,vec);
+
+	/*		vec[0] -= val / a;		
+	#ifdef PRINT_CONVERGE
+	System.err.printf("a %d",i); PRINT_CN_VEC();
+	#endif	
+	*/
+
+			val = evalbern2D(bb,vec);
+			b   = evalbern2D(bb_y,vec);
+	/*		vec[1] -= val / b;
+	*/
+			sumsq = a * a + b * b;
+			vec[0] -= val * a / sumsq;
+			vec[1] -= val * b / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("b %d",i); PRINT_CN_VEC();
+	#endif	
+
+			if( vec[0] != vec[0] )
+			{
+				System.err.printf("NaN in converge_node\n");
+				PRINT_CN_VEC();
+				print_sol(sol);
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				flag = false;
+				break;		
+			}
+
+			if( 
+				vec[0] < 0.0 
+			 ||	vec[0] > 1.0 
+			 ||	vec[1] < 0.0 	
+			 ||	vec[1] > 1.0 )
+			{
+	#ifdef PRINT_CONVERGE
+	System.err.printf("failed"); PRINT_CN_VEC();
+	#endif	
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				flag = false;
+				break;		
+			}
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("%d",i); PRINT_CN_VEC();
+	#endif	
+
+			/* then converge onto dx */
+
+			if(!signDx)
+			{
+				val = evalbern2D(dx,vec);
+				a   = evalbern2D(dx_x,vec);
+				b   = evalbern2D(dx_y,vec);
+				sumsq = a * a + b * b;
+				vec[0] -= val * a / sumsq;
+				vec[1] -= val * b / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dx"); PRINT_CN_VEC();
+	#endif	
+			}
+
+			if(!signDy)
+			{
+				val = evalbern2D(dy,vec);
+				a   = evalbern2D(dy_x,vec);
+				b   = evalbern2D(dy_y,vec);
+				sumsq = a * a + b * b;
+				vec[0] -= val * a / sumsq;
+				vec[1] -= val * b / sumsq;
+
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dy"); PRINT_CN_VEC();
+	#endif	
+			}
+
+			if(!signDz)
+			{
+				val = evalbern2D(dz,vec);
+				a   = evalbern2D(dz_x,vec);
+				b   = evalbern2D(dz_y,vec);
+				sumsq = a * a + b * b;
+				vec[0] -= val * a / sumsq;
+				vec[1] -= val * b / sumsq;
+	#ifdef PRINT_CONVERGE
+	System.err.printf("dz"); PRINT_CN_VEC();
+	#endif	
+			}
+
+			if( vec[0] != vec[0] )
+			{
+				System.err.printf("NaN in converge_node\n");
+				PRINT_CN_VEC();
+				print_sol(sol);
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				flag = false;
+				break;		
+			}
+				
+			if( 
+				vec[0] < 0.0 
+			 ||	vec[0] > 1.0 
+			 ||	vec[1] < 0.0 	
+			 ||	vec[1] > 1.0 )
+			{
+	#ifdef PRINT_CONVERGE
+	System.err.printf("failed"); PRINT_CN_VEC();
+	#endif	
+				vec[0] = oldvec[0];
+				vec[1] = oldvec[1];
+				flag = false;
+				break;		
+			}
+			
+		}
+	#ifdef PRINT_CONVERGE
+		if(flag) System.err.printf("sucess"); PRINT_CN_VEC();
+	#endif
+		sol.root = vec[0];
+		sol.root2 = vec[1];
+
+		free_bern2D(bb_x); free_bern2D(bb_y);
+		if(!signDx) { free_bern2D(dx_x); free_bern2D(dx_y); }
+		if(!signDy) { free_bern2D(dy_x); free_bern2D(dy_y); }
+		if(!signDz) { free_bern2D(dz_x); free_bern2D(dz_y); }
+		return flag;
+	}
+
+
+}

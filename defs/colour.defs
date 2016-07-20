@@ -1,0 +1,7 @@
+<definition name="XYZ" type="colour">
+[x,y,z];
+<variable name="x">
+<variable name="y">
+<variable name="z">
+</definition>
+

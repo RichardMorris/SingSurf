@@ -1,0 +1,39 @@
+<definition name="Profile" type="intersect" opType="psurf">
+// Calculate the profile of a parametrised surface
+// wrt a particular direction (a,b,c)
+
+N . [a,b,c];
+N = diff(S,x) ^^ diff(S,y);
+<variable name="S" type="psurf">
+<variable name="x">
+<variable name="y">
+<parameter name="a" value="1">
+<parameter name="b" value="0">
+<parameter name="c" value="0">
+</definition>
+
+<definition name="Intersect by surface" type="intersect" opType="impsurf">
+// Calculate the intersection with an implicit surface
+S;
+<variable name="S" type="impsurf">
+<variable name="x">
+<variable name="y">
+<variable name="z">
+</definition>
+
+<definition name="Parabolic line" type="intersect" opType="psurf">
+// The parabolic line on a surface
+l n - m^2;
+l = Sxx . N;
+m = Sxy . N;
+n = Syy . N;
+N = Sx ^^ Sy;
+Sxx = diff(Sx,x);
+Sxy = diff(Sx,y);
+Syy = diff(Sy,y);
+Sx = diff(S,x);
+Sy = diff(S,y);
+<variable name="S" type="psurf">
+<variable name="x">
+<variable name="y">
+</definition>
