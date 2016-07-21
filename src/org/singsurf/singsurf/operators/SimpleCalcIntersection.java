@@ -6,7 +6,7 @@ package org.singsurf.singsurf.operators;
 import jv.vecmath.PdVector;
 
 import org.singsurf.singsurf.Calculator;
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 public class SimpleCalcIntersection extends SimpleIntersect {
 	Calculator calc;

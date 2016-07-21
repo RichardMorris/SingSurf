@@ -12,7 +12,7 @@ import jv.project.PgGeometryIf;
 import jv.vecmath.PdVector;
 import jv.vecmath.PiVector;
 
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 /**
  * Abstract base class for intersection methods.

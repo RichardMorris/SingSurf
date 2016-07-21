@@ -14,7 +14,6 @@ import jv.number.PuDouble;
 import jv.project.PgGeometryIf;
 
 import org.singsurf.singsurf.Calculator;
-import org.singsurf.singsurf.EvaluationException;
 import org.singsurf.singsurf.LParamList;
 import org.singsurf.singsurf.PuParameter;
 import org.singsurf.singsurf.definitions.DefType;
@@ -22,6 +21,7 @@ import org.singsurf.singsurf.definitions.DefVariable;
 import org.singsurf.singsurf.definitions.LsmpDef;
 import org.singsurf.singsurf.geometries.GeomPair;
 import org.singsurf.singsurf.geometries.GeomStore;
+import org.singsurf.singsurf.jep.EvaluationException;
 import org.singsurf.singsurf.operators.ContinuityClip;
 import org.singsurf.singsurf.operators.SimpleCalcMap;
 import org.singsurf.singsurf.operators.SimpleMap;

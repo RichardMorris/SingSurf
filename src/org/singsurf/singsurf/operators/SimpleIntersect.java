@@ -7,7 +7,7 @@ import jv.geom.PgPointSet;
 import jv.project.PgGeometryIf;
 import jv.vecmath.PdVector;
 
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 /**
  * Base class for intersection algorithms which test zero crossing of a real valued function.

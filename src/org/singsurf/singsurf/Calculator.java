@@ -27,8 +27,10 @@ import org.singsurf.singsurf.definitions.LsmpDef;
 import org.singsurf.singsurf.definitions.Parameter;
 import org.singsurf.singsurf.jep.CDiv;
 import org.singsurf.singsurf.jep.CMul;
+import org.singsurf.singsurf.jep.EvaluationException;
 import org.singsurf.singsurf.jep.ExternalPartialDerivative;
 import org.singsurf.singsurf.jep.ExternalVariable;
+import org.singsurf.singsurf.jep.MinMax;
 
 public class Calculator {
 	/** The MatrixJep instance */
@@ -106,6 +108,8 @@ public class Calculator {
         CDiv cdiv = new CDiv(cmul);
         mj.addFunction("cmul",cmul);
         mj.addFunction("cdiv",cdiv);
+        mj.addFunction("min", new MinMax(true));
+        mj.addFunction("max", new MinMax(false));
 //		if(nderiv==1)
 //			firstDerivs = new MatrixNodeI[def.getNumVars()];
 	}
@@ -224,6 +228,10 @@ public class Calculator {
 		this.allComs.clear();
 		this.paramRefs.clear();
 		
+		for(int i=0;i<variableRefs.length;++i) {
+		    variableRefs[i] = -1;
+		    jepVars[i] = null;
+		}
 		for(Enumeration en=depVars.elements();en.hasMoreElements();)
 		{
 			MatrixVariableI var = (MatrixVariableI) en.nextElement();
@@ -287,8 +295,10 @@ public class Calculator {
 	{
 		double v[];
         try {
-            for(int i=0;i<inputDim;++i)
-            	mrpe.setVarValue(variableRefs[i],in[i]);
+            for(int i=0;i<inputDim;++i) {
+                if(variableRefs[i] >=0 )
+                    mrpe.setVarValue(variableRefs[i],in[i]);
+            }
 
             for(MRpCommandList com:allComs)
             	mrpe.evaluate(com);

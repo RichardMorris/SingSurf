@@ -18,7 +18,6 @@ import jv.rsrc.PsGeometryInfo;
 import jv.vecmath.PdVector;
 
 import org.singsurf.singsurf.Calculator;
-import org.singsurf.singsurf.EvaluationException;
 import org.singsurf.singsurf.LParamList;
 import org.singsurf.singsurf.LmsElementSetMaterial;
 import org.singsurf.singsurf.PuParameter;
@@ -27,6 +26,7 @@ import org.singsurf.singsurf.definitions.DefType;
 import org.singsurf.singsurf.definitions.DefVariable;
 import org.singsurf.singsurf.definitions.LsmpDef;
 import org.singsurf.singsurf.geometries.GeomStore;
+import org.singsurf.singsurf.jep.EvaluationException;
 import org.singsurf.singsurf.operators.SphereClip;
 import org.singsurf.singsurf.operators.UnSuportedGeometryException;
 /**

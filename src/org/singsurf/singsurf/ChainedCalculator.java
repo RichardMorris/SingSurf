@@ -20,6 +20,7 @@ import org.nfunk.jep.Variable;
 import org.singsurf.singsurf.definitions.DefType;
 import org.singsurf.singsurf.definitions.DefVariable;
 import org.singsurf.singsurf.definitions.LsmpDef;
+import org.singsurf.singsurf.jep.EvaluationException;
 import org.singsurf.singsurf.jep.ExternalPartialDerivative;
 import org.singsurf.singsurf.jep.ExternalVariable;
 
@@ -63,7 +64,16 @@ public class ChainedCalculator extends Calculator {
 			return;
 		}
 		dependentVariable = var.get(0);
-		jepVar = new ExternalVariable(this,dependentVariable.getName(),3);
+		if(type == DefType.psurf)
+		    jepVar = new ExternalVariable(this,dependentVariable.getName(),3);
+		else if(type == DefType.asurf)
+            jepVar = new ExternalVariable(this,dependentVariable.getName(),1);
+		else {
+		    this.msg = "OpType must be asurf or psurf its is "+type;
+            this.good = false;
+            return;
+		}
+		
 		super.build();
 		if(!good) return;
 		try {

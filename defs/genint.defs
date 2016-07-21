@@ -12,15 +12,6 @@ N = diff(S,x) ^^ diff(S,y);
 <parameter name="c" value="0">
 </definition>
 
-<definition name="Intersect by surface" type="intersect" opType="impsurf">
-// Calculate the intersection with an implicit surface
-S;
-<variable name="S" type="impsurf">
-<variable name="x">
-<variable name="y">
-<variable name="z">
-</definition>
-
 <definition name="Parabolic line" type="intersect" opType="psurf">
 // The parabolic line on a surface
 l n - m^2;
@@ -36,4 +27,13 @@ Sy = diff(S,y);
 <variable name="S" type="psurf">
 <variable name="x">
 <variable name="y">
+</definition>
+
+<definition name="Intersect by surface" type="intersect" opType="asurf">
+// Calculate the intersection with an implicit surface
+S;
+<variable name="S" type="asurf">
+<variable name="x">
+<variable name="y">
+<variable name="z">
 </definition>

@@ -1,4 +1,4 @@
-package org.singsurf.singsurf;
+package org.singsurf.singsurf.jep;
 
 /**
  * Wrapper class to indicate errors during evaluation
@@ -10,6 +10,10 @@ public class EvaluationException extends Exception {
 
     public EvaluationException(Exception e) {
         super(e);
+    }
+
+    public EvaluationException(String s) {
+        super(s);
     }
 
 }

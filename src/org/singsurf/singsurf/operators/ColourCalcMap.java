@@ -11,7 +11,7 @@ import jv.geom.PgPolygonSet;
 import jv.vecmath.PdVector;
 
 import org.singsurf.singsurf.Calculator;
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 /**
  * @author Richard Morris

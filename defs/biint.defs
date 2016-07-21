@@ -1,9 +1,9 @@
 <definition name="co-tangent" type="intersect" opType="pcurve">
 (P^^Q) . [0,0,1];
-P = diff(R,x);
-Q = diff(S,y);
-<variable name="R" type="pcurve">
+P = diff(S,x);
+Q = diff(T,y);
 <variable name="S" type="pcurve">
+<variable name="T" type="pcurve">
 <variable name="x">
 <variable name="y">
 </definition>
@@ -57,13 +57,4 @@ dT = diff(T,t);
 <variable name="T" type="pcurve">
 <variable name="s">
 <variable name="t">
-</definition>
-
-
-<definition name="x=y" type="intersect" opType="pcurve">
-x - y;
-<variable name="S1" type="pcurve">
-<variable name="S2" type="pcurve">
-<variable name="x">
-<variable name="y">
 </definition>

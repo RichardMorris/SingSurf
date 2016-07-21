@@ -8,7 +8,7 @@ import jv.geom.PgPointSet;
 import jv.geom.PgPolygonSet;
 import jv.vecmath.PdVector;
 
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 public abstract class SimpleMap extends AbstractModifier {
 

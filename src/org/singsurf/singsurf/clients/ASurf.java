@@ -6,14 +6,10 @@
 package org.singsurf.singsurf.clients;
 
 
-import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.CheckboxGroup;
 import java.awt.Color;
-import java.awt.Image;
 import java.awt.ItemSelectable;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
@@ -40,7 +36,6 @@ import org.singsurf.singsurf.LmsPolygonSetMaterial;
 import org.singsurf.singsurf.PolynomialCalculator;
 import org.singsurf.singsurf.PuParameter;
 import org.singsurf.singsurf.PuVariable;
-import org.singsurf.singsurf.RayTrace;
 import org.singsurf.singsurf.acurve.AsurfException;
 import org.singsurf.singsurf.acurve.EquationConverter;
 import org.singsurf.singsurf.asurf.BoxClevA;
@@ -97,9 +92,6 @@ public class ASurf extends AbstractClient {
 
     protected boolean singleGeom = true;
     protected boolean advancedOptions = false;
-
-	protected 	Button		butRay;
-	protected 	Button		butRayOptions;
 
     //Plotter2D plotter;
 
@@ -240,16 +232,6 @@ public class ASurf extends AbstractClient {
         cbShowVert.setState(false);
         
         
-    	butRay = new Button("Raytrace");
-    	butRay.addActionListener(new ActionListener() {
-    			public void actionPerformed(ActionEvent e) {
-    				myRaytracier.calculate();
-    				}});
-    	butRayOptions = new Button("Advanced");
-    	butRayOptions.addActionListener(new ActionListener() {
-    			public void actionPerformed(ActionEvent e) {
-    				myRaytracier.showOptions();
-    				}});
 
 
         //		plotter = new Plotter2D(Integer.parseInt(cbg_coarse.getSelectedCheckbox().getLabel()),
@@ -261,13 +243,6 @@ public class ASurf extends AbstractClient {
     public void init2()
 	{
 		super.init2();
-		try {
-		myRaytracier = new RayTrace();
-		myRaytracier.setViewer(this.getViewer());
-		myRaytracier.setLsmpClient(this);
-		} catch(Exception e) {
-		    System.out.println(e.toString());
-		}
 	}
 
     public void setCoarse(int c){
@@ -676,41 +651,10 @@ public class ASurf extends AbstractClient {
 
     @Override
     public boolean loadDefByName(String s) {
-System.out.println("loadDefByName "+s);
         LsmpDef def = getDef(s);
         if(def==null) return false;
         loadDefinition(def);
-
-//        class MyRunnable implements Runnable {
-//            LsmpDef def;
-//
-//            /**
-//             * @param def
-//             */
-//            public MyRunnable(LsmpDef def) {
-//                this.def = def;
-//            }
-//
-//            public void run() {
-//                loadDefinition(def);
-//            }
-//        }
-//        MyRunnable runnable = new MyRunnable(def.duplicate());
-//        try {
-//            SwingUtilities.invokeAndWait(runnable);
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        } catch (InvocationTargetException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
         return true;
     }
-
-	protected RayTrace myRaytracier = null;
-
-    public RayTrace getRayTracer() { return myRaytracier; }
-    public Image getRayTraceImage() { return myRaytracier.getImage(); }
 
 }

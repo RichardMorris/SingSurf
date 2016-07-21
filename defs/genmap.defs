@@ -62,7 +62,7 @@ l = Sxx . N;
 m = Sxy . N;
 n = Syy . N;
 //#N = N1 / sqrt(N1.N1);
-N = Sx ^ Sy;
+N = Sx ^^ Sy;
 E = Sx . Sx;
 F = Sx . Sy;
 G = Sy . Sy;
@@ -87,8 +87,8 @@ H = ( G l + E n - 2 F m ) / ( 2 E G - 2 F^2);
 l = Sxx . N;
 m = Sxy . N;
 n = Syy . N;
-#N = N1 / sqrt(N1.N1);
-N = Sx ^ Sy;
+//#N = N1 / sqrt(N1.N1);
+N = Sx ^^ Sy;
 E = Sx . Sx;
 F = Sx . Sy;
 G = Sy . Sy;
@@ -97,46 +97,8 @@ Sxy = diff(Sx,y);
 Syy = diff(Sy,y);
 Sx = diff(S,x);
 Sy = diff(S,y);
-S=(X,Y,Z);
-<variable name="X" type="AuxOutX">
-<variable name="Y" type="AuxOutY">
-<variable name="Z" type="AuxOutZ">
-<variable name="x" type="AuxInX">
-<variable name="y" type="AuxInY">
+<variable name="x">
+<variable name="y">
+<variable name="S" dim="3" type="psurf">
 <parameter name="sign" value="-1">
 </definition>
-
-<definition name="Colour by Curvature"  type="mapping" opType="psurf icurve">
-// Sheet 1 of a focal surface
-S;
-colours=(relK,0,1-relK,1);
-relK = (k1 -minK) / (maxK-minK);
-minK = -2; maxK = 2;
-k1 = H + sign sqrt( H^2 - K );
-K = ( l n - m^2 ) / ( E G - F^2 );
-H = ( G l + E n - 2 F m ) / ( 2 E G - 2 F^2);
-
-l = Sxx . N;
-m = Sxy . N;
-n = Syy . N;
-#N = N1 / sqrt(N1.N1);
-N = Sx ^ Sy;
-E = Sx . Sx;
-F = Sx . Sy;
-G = Sy . Sy;
-Sxx = diff(Sx,x);
-Sxy = diff(Sx,y);
-Syy = diff(Sy,y);
-Sx = diff(S,x);
-Sy = diff(S,y);
-#S = (x,y,1/3*x^3 - x y^2 + A(x^2 + y^2) + 0.1 x^3 y);
-#A = 0.7;
-S=(X,Y,Z);
-<variable name="X" type="AuxOutX">
-<variable name="Y" type="AuxOutY">
-<variable name="Z" type="AuxOutZ">
-<variable name="x" type="AuxInX">
-<variable name="y" type="AuxInY">
-<parameter name="sign" value="-1">
-</definition>
-

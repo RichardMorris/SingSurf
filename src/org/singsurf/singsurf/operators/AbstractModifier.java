@@ -8,7 +8,7 @@ import jv.geom.PgPointSet;
 import jv.geom.PgPolygonSet;
 import jv.project.PgGeometryIf;
 
-import org.singsurf.singsurf.EvaluationException;
+import org.singsurf.singsurf.jep.EvaluationException;
 
 /**
  * Abstract base class for geometry operations which operate in place on a geometry.

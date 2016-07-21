@@ -20,6 +20,7 @@ import org.nfunk.jep.Variable;
 import org.singsurf.singsurf.definitions.DefType;
 import org.singsurf.singsurf.definitions.DefVariable;
 import org.singsurf.singsurf.definitions.LsmpDef;
+import org.singsurf.singsurf.jep.EvaluationException;
 import org.singsurf.singsurf.jep.ExternalPartialDerivative;
 import org.singsurf.singsurf.jep.ExternalVariable;
 

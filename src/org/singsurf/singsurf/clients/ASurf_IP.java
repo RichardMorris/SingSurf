@@ -61,11 +61,6 @@ public class ASurf_IP extends PjProject_IP implements ActionListener {
 
         PsPanel p1, p2, p2a, p3, p4;
 
-        // addSubTitle("URL for Asurf server");
-        // add(m_PjPsurfClient.tf_asurfURL);
-        // addSubTitle("Temporary File");
-        // add(m_PjPsurfClient.tf_tmpFile);
-
         p1 = new PsPanel();
         p3 = new PsPanel();
         p4 = new PsPanel();
@@ -211,16 +206,10 @@ public class ASurf_IP extends PjProject_IP implements ActionListener {
             add(parent.chDefs);
         }
 
-        add(parent.butRay);
-        add(parent.butRayOptions);
-        
         PsPanel pSave = new PsPanel(new GridLayout(2,1));
         pSave.add(parent.bLoad);
         pSave.add(parent.bSave);
         add(pSave);
-
-
-        // System.out.println("IP setParent done");
     }
 
     /*

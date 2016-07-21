@@ -47,7 +47,6 @@ import jv.project.PjProject_IP;
 import jv.project.PvCameraIf;
 import jv.viewer.PvViewer;
 
-import org.singsurf.singsurf.clients.AbstractCGIClient;
 import org.singsurf.singsurf.clients.AbstractClient;
 import org.singsurf.singsurf.clients.AbstractOperatorClient;
 import org.singsurf.singsurf.clients.SSHelp;
@@ -107,9 +106,7 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 
 	/** whether we auto fit **/
 	protected boolean autoFit;
-	
-	protected int serverType = AbstractCGIClient.NO_SERVER;
-	
+		
 	PopupMenu rightClickPopup;
 
 	public SingSurfPro() {
@@ -133,11 +130,6 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 		chProj.add("Display");
 		chProj.addItemListener(this);
 		chProj.addMouseListener(this);
-		String s = m_viewer.getParameter("ServerType");
-		if(s==null) serverType = AbstractCGIClient.NO_SERVER;
-		else if(s.equals("CGI")) serverType = AbstractCGIClient.CGI_SERVER;
-		else if(s.equals("EXEC")) serverType = AbstractCGIClient.EXEC_SERVER;
-		else serverType = AbstractCGIClient.NO_SERVER;
 		
 		if(SSPanelPos.equals("Control"))
 		{
