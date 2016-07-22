@@ -67,8 +67,6 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 {
 	private static final long serialVersionUID = -7242387172848278637L;
 
-
-
 	class Generator {
 		java.util.List<LsmpDef> defs= null;
 		String title, prefix;
@@ -144,11 +142,9 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 		try {
 			loadGenerators();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            System.out.println(e.toString());
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            System.out.println(e.toString());
 		}
 		buildMenus();
 		ssHelp = new SSHelp();
@@ -390,17 +386,17 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 		rightClickPopup.add("Project Name");
 		rightClickPopup.addSeparator();
 		
-		CheckboxMenuItem cbit = new CheckboxMenuItem("Show vertices");
-		cbit.addItemListener(new ItemListener(){
-			@Override
-			public void itemStateChanged(ItemEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}});
-		rightClickPopup.add(cbit);
+//		CheckboxMenuItem cbit = new CheckboxMenuItem("Show vertices");
+//		cbit.addItemListener(new ItemListener(){
+//			@Override
+//			public void itemStateChanged(ItemEvent arg0) {
+//				
+//				
+//			}});
+//		rightClickPopup.add(cbit);
 		
 		
-		rightClickPopup.addSeparator();
+//		rightClickPopup.addSeparator();
 
 		it = new MenuItem("Clone");
 		it.addActionListener(new ActionListener(){
@@ -472,7 +468,6 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 		String suffix=null;
 		if(st.countTokens()>0)
 			suffix = st.nextToken();
-		boolean manageIP = m_viewer.getParameter("Control").equalsIgnoreCase("Hide");
 		
 		for(Generator gen:generators) {
 			if(prefix.equals(gen.prefix)) {
@@ -485,24 +480,8 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 							addProject(gen,def);
 					}}
 				    
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InstantiationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				} catch (Exception e) {
+				    System.out.println(e.toString());
 				}
 			}
 		}
@@ -697,7 +676,7 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 	{
 		String name = chProj.getSelectedItem();
 		if(name.equals("Display")) return;
-		AbstractClient proj = (AbstractClient) m_viewer.getProject(name);
+		//AbstractClient proj = (AbstractClient) m_viewer.getProject(name);
 		ChangeNameDialog d = new ChangeNameDialog(this.m_frame,name);
 		d.setVisible(true);
 		if(d.state)
@@ -712,24 +691,8 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 			if(def.getType() == gen.type) {
 				try {
 					addProject(gen,def);
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InstantiationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				} catch (Exception e) {
+				     System.out.println(e.toString());
 				}
 			}
 		}

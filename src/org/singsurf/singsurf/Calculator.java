@@ -116,8 +116,6 @@ public class Calculator {
 
 	/**
 	 * Builds all the necessary components from a definition.
-	 * 
-	 * @param def
 	 */
 	public void build() {
 		good = false; msg = null;
@@ -190,7 +188,7 @@ public class Calculator {
 		st.print(pv);
 
 		System.out.println("Variables:");
-		for(Enumeration  loop = st.keys();loop.hasMoreElements();)
+		for(Enumeration<?>  loop = st.keys();loop.hasMoreElements();)
 		{
 			String s = (String) loop.nextElement();
 			XVariable var = (XVariable) st.getVar(s);
@@ -205,7 +203,7 @@ public class Calculator {
 	 */
 	void buildDepVars() throws ParseException
 	{
-		depVars = mj.recursiveGetVarsInEquation(top,new Vector());
+		depVars = mj.recursiveGetVarsInEquation(top,new Vector<Object>());
 	}
 	
 	void extendDepVars(Node eqn) throws ParseException
@@ -232,7 +230,7 @@ public class Calculator {
 		    variableRefs[i] = -1;
 		    jepVars[i] = null;
 		}
-		for(Enumeration en=depVars.elements();en.hasMoreElements();)
+		for(Enumeration<?> en=depVars.elements();en.hasMoreElements();)
 		{
 			MatrixVariableI var = (MatrixVariableI) en.nextElement();
 
@@ -290,7 +288,8 @@ public class Calculator {
 	}
 
 	/** Evaluate the top equation 
-	 * @throws ParseException */
+	 * @throws EvaluationException
+	 **/
 	public double[] evalTop(double in[]) throws EvaluationException
 	{
 		double v[];

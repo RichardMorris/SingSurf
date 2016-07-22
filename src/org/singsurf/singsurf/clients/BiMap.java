@@ -66,11 +66,11 @@ public class BiMap extends Mapping implements GeneralisedBiOperator {
 
     public LsmpDef createDefaultDef() {
         LsmpDef def;
-        def = new LsmpDef("Intersect",DefType.biMap,"");
-        def.add(new DefVariable("x", "none"));
-        def.add(new DefVariable("y", "none"));
-        def.add(new DefVariable("R", "pcurve"));
+        def = new LsmpDef("BiMap",DefType.biMap,"");
+        def.add(new DefVariable("s", "none"));
+        def.add(new DefVariable("t", "none"));
         def.add(new DefVariable("S", "pcurve"));
+        def.add(new DefVariable("T", "pcurve"));
         def.setOpType(DefType.pcurve);
         return def;
     }
@@ -130,10 +130,6 @@ public class BiMap extends Mapping implements GeneralisedBiOperator {
             setIngredient2(store.getGenerator(ingrName).getCalculator());
         }
 		else super.itemStateChanged(e);
-	}
-
-	private void setProject(boolean state) {
-		this.calcGeoms();
 	}
 
 	@Override

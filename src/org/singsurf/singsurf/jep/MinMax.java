@@ -14,8 +14,6 @@ import org.nfunk.jep.function.Comparative;
  */
 public class MinMax extends ArrayFunctionBase
 {
-    private static final long serialVersionUID = 310L;
-
     /**
      * Used to compare greater than or less than between objects.
      */
@@ -35,7 +33,7 @@ public class MinMax extends ArrayFunctionBase
     
     /**
      * Constructor allowing for a different Comparative object.
-     * The {@link Comparative#compare(Object, Object)} method will be used to compare elements.
+     * The Comparative  object will be used to compare elements.
      * @param comp a Comparative object or subclass implemented less than or greater than.
      * @since 3.4.0
      */
@@ -46,7 +44,7 @@ public class MinMax extends ArrayFunctionBase
 
 
     @Override
-    protected Object calc(List v) throws ParseException {
+    protected Object calc(List<Object> v) throws ParseException {
          return minmax(v);
     }
 

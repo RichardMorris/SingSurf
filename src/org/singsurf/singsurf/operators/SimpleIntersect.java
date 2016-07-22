@@ -81,7 +81,7 @@ public abstract class SimpleIntersect extends AbstractIntersect {
 		if(bVal==0.0) return null;
 		if(aVal*bVal>0.0) return null;
 		PdVector C= new PdVector(dim);
-        PdVector H,L,S;
+        PdVector H,L;
         double cVal;
         if(aVal > 0.0) {
             H = A; L = B;

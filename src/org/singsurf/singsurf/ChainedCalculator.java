@@ -80,7 +80,7 @@ public class ChainedCalculator extends Calculator {
 			jepVarRef = mrpe.getVarRef((MatrixVariableI)jepVar);
 			derivMrpeRefs = new ArrayList<Integer>();
 			int dnum=0;
-			for(Enumeration en=jepVar.allDerivatives();en.hasMoreElements();)
+			for(Enumeration<?> en=jepVar.allDerivatives();en.hasMoreElements();)
 			{
 				Object o = en.nextElement();
 				ExternalPartialDerivative diff = (ExternalPartialDerivative) o;
@@ -97,7 +97,7 @@ public class ChainedCalculator extends Calculator {
 		    this.good = false;
 		    return;
 		}
-	      Enumeration e = jepVar.allDerivatives();
+	      Enumeration<?> e = jepVar.allDerivatives();
 	        derivTrans = new ArrayList<Integer>();
 	        int dnum=0;
 	        while(e.hasMoreElements()) { /* for each derivative ... */

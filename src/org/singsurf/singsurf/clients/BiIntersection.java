@@ -132,10 +132,6 @@ public class BiIntersection extends Intersection implements GeneralisedBiOperato
 		else super.itemStateChanged(e);
 	}
 
-	private void setProject(boolean state) {
-		this.calcGeoms();
-	}
-
 	@Override
 	public void geometryHasChanged(String geomName) {
 		super.geometryHasChanged(geomName);

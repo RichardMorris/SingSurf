@@ -89,8 +89,8 @@ public class BiMap_IP extends PjProject_IP  implements ActionListener {
 		p5.add(parent.chColours);
 		p4.add(p5);
 		p4.add(parent.cbCreateNew);
-//		p4.add(parent.cbShowFace);
-//		p4.add(parent.cbShowEdge);
+		p4.add(parent.cbShowFace);
+		p4.add(parent.cbShowEdge);
 		p4.add(parent.cbShowCurves);
 		p4.add(parent.cbShowVert);
 		p4.add(parent.cbKeepMat);

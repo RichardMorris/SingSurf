@@ -26,6 +26,7 @@ public class CDiv  extends PostfixMathCommand implements DiffRulesI, BinaryOpera
         numberOfParameters = 2;
     }
     
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void run(Stack inStack)        throws ParseException 
     {
         checkStack(inStack); // check the stack

@@ -165,7 +165,8 @@ abstract public class PaSingSurf extends Applet {
     {
         System.out.println("loadModel " + name);
         AbstractClient myProj = (AbstractClient) m_viewer.getCurrentProject();
-        boolean flag = myProj.loadDefByName(name);
+        //boolean flag = 
+        myProj.loadDefByName(name);
 //        String str = 	m_viewer.getParameter("ExecDir");
 //        if(flag)
 //        {
@@ -179,7 +180,7 @@ abstract public class PaSingSurf extends Applet {
     
     /**
      * Common standalone startup script.
-     * @param Applet we want to run
+     * @param va Applet we want to run
      * @param args arguments to applet
      */
     protected static void commonMain(PaSingSurf va,String [] args)
@@ -194,8 +195,6 @@ abstract public class PaSingSurf extends Applet {
         va.m_frame = frame;
         va.init();
         va.start();
-        double r1 = 4, r2=6;
-        double roots[] = { r1, r2};
     }
 
 }

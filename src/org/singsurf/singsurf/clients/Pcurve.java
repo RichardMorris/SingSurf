@@ -98,7 +98,8 @@ public class Pcurve extends AbstractClient {
 	public void loadDefinition(LsmpDef newdef)
 	{
 		def = newdef.duplicate(); 
-		boolean flag = checkDef(def);
+		//boolean flag = 
+		        checkDef(def);
 		def.setName(this.getName());
 		this.getInfoPanel().setTitle(this.getName());
 		calc = new Calculator(def,0);

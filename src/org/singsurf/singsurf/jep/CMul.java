@@ -28,6 +28,7 @@ public class CMul  extends PostfixMathCommand  implements DiffRulesI, BinaryOper
         numberOfParameters = 2;
     }
     
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void run(Stack inStack)        throws ParseException 
     {
         checkStack(inStack); // check the stack

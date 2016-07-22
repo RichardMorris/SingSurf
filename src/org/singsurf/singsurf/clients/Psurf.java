@@ -50,9 +50,6 @@ public class Psurf extends AbstractClient {
 	/** default definition to use */
 	private final String my_defaultDefName = "Cross cap";
 	
-	/** Default name for geometries **/
-	private final	String		my_baseName = "psurf";
-
 	PuVariable displayVars[]=new PuVariable[2];
 	protected	PuDouble	m_Clipping;
 	int globalSteps = 40;

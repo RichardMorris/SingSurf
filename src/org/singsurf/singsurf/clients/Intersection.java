@@ -162,7 +162,7 @@ public class Intersection extends AbstractOperatorClient {
 			return;
 		}
 		PgGeometryIf out = p.getOutput();
-		store.copySrcTgt(resultGeom,out);
+		GeomStore.copySrcTgt(resultGeom,out);
 		setDisplayProperties(out);
 		store.geomChanged(out);
 	}

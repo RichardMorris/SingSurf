@@ -13,7 +13,8 @@ public class SimpleCalcIntersection extends SimpleIntersect {
 	public SimpleCalcIntersection(Calculator calc) {
 		this.calc = calc;
 	}
-	private SimpleCalcIntersection() {}
+	@SuppressWarnings("unused")
+    private SimpleCalcIntersection() {}
 	@Override
 	public double findValue(PdVector vec) throws EvaluationException {
 		double[] v = calc.evalTop(vec.getEntries());

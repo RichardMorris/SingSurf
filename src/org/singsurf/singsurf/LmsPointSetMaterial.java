@@ -1,12 +1,10 @@
 package org.singsurf.singsurf;
+import java.awt.Color;
+
 import jv.geom.PgElementSet;
 import jv.geom.PgPointSet;
 import jv.geom.PgPolygonSet;
 import jv.project.PgGeometryIf;
-
-import java.awt.Color;
-
-import org.w3c.dom.Node;
 
 /**
 	Class to hold all the global display attributes of a geometry.

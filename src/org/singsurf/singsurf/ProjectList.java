@@ -13,7 +13,6 @@ import java.util.List;
 import org.singsurf.singsurf.clients.AbstractClient;
 
 public class ProjectList  {
-    private static final long serialVersionUID = 1L;
     java.awt.List awtList = new java.awt.List();
     List<AbstractClient> projects = new ArrayList<AbstractClient>();
 

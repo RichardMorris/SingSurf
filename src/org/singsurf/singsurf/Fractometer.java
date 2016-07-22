@@ -28,7 +28,6 @@ import java.text.ParseException;
 import jv.object.PsObject;
 
 public class Fractometer  {
-	private static final long serialVersionUID = 1L;
 
 	/** The value of the control */
 	double value;

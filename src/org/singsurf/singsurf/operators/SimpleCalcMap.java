@@ -14,7 +14,8 @@ import org.singsurf.singsurf.jep.EvaluationException;
  */
 public class SimpleCalcMap extends SimpleMap {
 	Calculator calc;
-	private SimpleCalcMap() {	}
+	@SuppressWarnings("unused")
+    private SimpleCalcMap() {	}
 	public SimpleCalcMap(Calculator calc) {
 		this.calc = calc;
 	}

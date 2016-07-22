@@ -9,11 +9,9 @@ import java.awt.Component;
 import java.awt.Label;
 import java.awt.Panel;
 
-import org.singsurf.singsurf.definitions.Parameter;
-
-import jv.number.PuDouble;
 import jv.object.PsObject;
-import jv.object.PsPanel;
+
+import org.singsurf.singsurf.definitions.Parameter;
 
 /**
  * A control for a single double value.
@@ -25,15 +23,15 @@ import jv.object.PsPanel;
  * Created on 31-Mar-2005
  */
 public class PuParameter extends PsObject {
-		Fractometer control;
+    private static final long serialVersionUID = 1L;
+        Fractometer control;
 		Label label;
 		PsObject parent;
 		int ref=-1;
 		/** Create an PuParameter object.
 		 * 
 		 * @param obj a reference to the parent object which is notified of changes.
-		 * @param name the name of the variable
-		 * @param ref used to store a reference.
+		 * @param p the parameter
 		 */
 		public PuParameter(PsObject obj,Parameter p) {
 			parent = obj;
@@ -56,12 +54,11 @@ public class PuParameter extends PsObject {
 		}
 		
 		public double getVal() {return control.getValue();}
-		/**
-		 * @param ref The ref to set.
-		 */
+
 		public void setVal(double val) {
 			control.setValue(val);
 		}
+		
 		void setRef(int r) { ref=r;}
 		int getRef() { return ref;}
 		public Fractometer getControl() {

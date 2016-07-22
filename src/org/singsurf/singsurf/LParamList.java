@@ -5,8 +5,6 @@
  */
 package org.singsurf.singsurf;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Panel;
@@ -16,13 +14,12 @@ import java.awt.event.ComponentListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
-
-import org.singsurf.singsurf.clients.AbstractClient;
-import org.singsurf.singsurf.definitions.Parameter;
 
 import jv.object.PsObject;
 import jv.object.PsPanel;
+
+import org.singsurf.singsurf.clients.AbstractClient;
+import org.singsurf.singsurf.definitions.Parameter;
 
 /**
  * Holds a list of interactive parameters.
@@ -43,7 +40,9 @@ import jv.object.PsPanel;
  */
 
 public class LParamList extends PsPanel implements ComponentListener {
-	private boolean changed;
+    private static final long serialVersionUID = 1L;
+
+    private boolean changed;
 	PsObject parent;
 	List<PuParameter> v = new ArrayList<PuParameter>();
 	ScrollPane pane = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
@@ -72,7 +71,8 @@ public class LParamList extends PsPanel implements ComponentListener {
 
 		//pane.setBounds(this.getBounds());
 	}
-	private LParamList() {};
+	@SuppressWarnings("unused")
+    private LParamList() {};
 	
 	public PuParameter addParameter(Parameter p) {
 		for(int i=0;i<v.size();++i) {

@@ -19,7 +19,8 @@ import org.singsurf.singsurf.jep.EvaluationException;
  */
 public class ColourCalcMap extends AbstractModifier {
 	Calculator calc;
-	private ColourCalcMap() {	}
+	@SuppressWarnings("unused")
+    private ColourCalcMap() {	}
 	public ColourCalcMap(Calculator calc) {
 		this.calc = calc;
 	}

@@ -44,6 +44,7 @@ public abstract class ArrayFunctionBase extends PostfixMathCommand
     /**
      * Calls the calc method after concatenating all elements into list.
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void run(Stack stack) throws ParseException
     {

@@ -6,7 +6,6 @@ package org.singsurf.singsurf;
 import java.awt.AWTEvent;
 import java.awt.Button;
 import java.awt.HeadlessException;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.util.Timer;

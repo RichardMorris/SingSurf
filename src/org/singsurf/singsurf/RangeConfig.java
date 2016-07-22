@@ -1,15 +1,23 @@
 package org.singsurf.singsurf;
-import java.awt.*;
-import java.awt.event.*;
-import jv.object.PsDialog;
-import jv.object.PsDebug;
+import java.awt.Button;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import jv.number.PuDouble;
+import jv.object.PsDebug;
+import jv.object.PsDialog;
 
 /** A Dialog to handle global changes in a range **/
 
 public class RangeConfig extends PsDialog implements ActionListener
 {
-	double	min,max,smallStep,bigStep,accuracy;
+    private static final long serialVersionUID = 1L;
+
+    double	min,max,smallStep,bigStep,accuracy;
 	
 	TextField	tf_min;
 	TextField	tf_max;

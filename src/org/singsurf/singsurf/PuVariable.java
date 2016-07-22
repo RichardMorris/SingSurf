@@ -14,7 +14,9 @@ import jv.object.PsPanel;
 import org.singsurf.singsurf.definitions.DefVariable;
 
 public class PuVariable  extends PsObject {
-	Label minLabel,maxLabel;
+    private static final long serialVersionUID = 1L;
+
+    Label minLabel,maxLabel;
 	Fractometer minControl,maxControl;
 	PuInteger stepsControl;
 	PsObject parent;
