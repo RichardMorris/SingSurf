@@ -20,7 +20,9 @@ import org.singsurf.singsurf.geometries.GeomStore;
 import org.singsurf.singsurf.geometries.SSGeomListener;
 
 public abstract class AbstractOperatorClient extends AbstractClient  implements SSGeomListener {
-	/** A choice of avaliable inputs */
+    private static final long serialVersionUID = 1L;
+
+    /** A choice of avaliable inputs */
 	protected Choice ch_inputSurf;
 	/** String to represent no input */
 	public static final String NONE = "-- None --";

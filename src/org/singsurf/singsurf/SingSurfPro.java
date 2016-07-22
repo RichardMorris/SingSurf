@@ -256,6 +256,8 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
         generators.add(new Generator("Intersections","Intersection","defs/intersect.defs",
                 "Intersection",DefType.intersect));
 		generators.add(new Generator("Mappings","Mapping","defs/mapping.defs","Mapping",DefType.mapping));
+        generators.add(new Generator("Clip","Clip","defs/clip.defs",
+                "Clip",DefType.clip));
 		generators.add(new Generator("Generalized Intersections","Generalized Intersection","defs/genint.defs",
 				"GeneralizedIntersection",DefType.genInt));
         generators.add(new Generator("Generalized Mapping","Generalized Mapping","defs/genmap.defs","GeneralizedMapping",DefType.genMap));

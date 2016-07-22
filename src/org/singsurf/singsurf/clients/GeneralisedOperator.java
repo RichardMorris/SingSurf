@@ -5,8 +5,6 @@ package org.singsurf.singsurf.clients;
 
 import org.singsurf.singsurf.Calculator;
 
-import jv.project.PgGeometryIf;
-
 public interface GeneralisedOperator {
 	public void setIngredient(Calculator inCalc);
 	public boolean goodIngredient();

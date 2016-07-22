@@ -17,11 +17,8 @@ import org.singsurf.singsurf.geometries.GeomStore;
 import org.singsurf.singsurf.operators.SimpleCalcMap;
 
 public class BiMap extends Mapping implements GeneralisedBiOperator {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 8862422439891056104L;
+	private static final long serialVersionUID = 1L;
+	
 	protected static final String programName = "Bi-Map";
 	/**
 	 * The default equation (x^2 y - y^3 - z^2 = 0.0;).

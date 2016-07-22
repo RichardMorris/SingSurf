@@ -27,6 +27,7 @@ public class DefType
     public static final DefType biMap = new DefType("biMap");
     public static final DefType biInt = new DefType("biInt");
 	public static final DefType colour = new DefType("colour");
+    public static final DefType clip = new DefType("clip");
 
 	public String toString() { return type; }
 	public static DefType get(String s)

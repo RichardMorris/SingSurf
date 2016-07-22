@@ -10,6 +10,8 @@ import jv.object.PsObject;
 import jv.vecmath.PdVector;
 import jv.vecmath.PiVector;
 
+import org.singsurf.singsurf.jep.EvaluationException;
+
 public abstract class SimpleClip extends AbstractModifier {
 
 	protected boolean goodVerts[];
@@ -18,7 +20,7 @@ public abstract class SimpleClip extends AbstractModifier {
 		// TODO Auto-generated constructor stub
 	}
 
-	public boolean findGoodVerts(PgPointSet geom)
+	public boolean findGoodVerts(PgPointSet geom) throws EvaluationException
 	{
 		boolean allGood=true;
 		int nVert=geom.getNumVertices();
@@ -36,7 +38,7 @@ public abstract class SimpleClip extends AbstractModifier {
 	}
 
 	@Override
-	public PgPointSet operatePoints(PgPointSet geom) {
+	public PgPointSet operatePoints(PgPointSet geom) throws EvaluationException {
 		boolean allGood = findGoodVerts(geom);
 		if(allGood) return geom;
 		geom.removeMarkedVertices();
@@ -44,7 +46,7 @@ public abstract class SimpleClip extends AbstractModifier {
 	}
 
 	@Override
-	public PgElementSet operateSurface(PgElementSet geom) {
+	public PgElementSet operateSurface(PgElementSet geom) throws EvaluationException {
 		
 		boolean allGood = findGoodVerts(geom);
 		if(allGood) return geom;
@@ -53,7 +55,7 @@ public abstract class SimpleClip extends AbstractModifier {
 	}
 
 	@Override
-	public PgPolygonSet operateCurve(PgPolygonSet geom) {
+	public PgPolygonSet operateCurve(PgPolygonSet geom) throws EvaluationException {
 		boolean allGood = findGoodVerts(geom);
 		if(allGood) return geom;
 		int newIndices[] = geom.removeMarkedVertices();
@@ -75,5 +77,5 @@ public abstract class SimpleClip extends AbstractModifier {
 		return geom;
 	}
 
-	public abstract boolean testClip(PdVector vec);
+	public abstract boolean testClip(PdVector vec) throws EvaluationException;
 }

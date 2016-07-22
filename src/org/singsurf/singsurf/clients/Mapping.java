@@ -10,6 +10,7 @@ import java.awt.event.ItemEvent;
 
 import jv.geom.PgElementSet;
 import jv.geom.PgPointSet;
+import jv.geom.PgPolygonSet;
 import jv.number.PuDouble;
 import jv.project.PgGeometryIf;
 
@@ -145,7 +146,9 @@ public class Mapping extends AbstractOperatorClient {
         System.out.println("input");
         // debugCols((PgElementSet) input);
         mappedGeom = (PgPointSet) input.clone();
-        System.out.println("mapped before");
+        System.out.println("mapped before "+mappedGeom.hasVertexColors());
+//        System.out.println("Vert cols "+geom.hasVertexColors()+" "+geom.hasElementColors());
+
         // debugCols((PgElementSet) mappedGeom);
         try {
             map.operate(mappedGeom);
@@ -185,6 +188,16 @@ public class Mapping extends AbstractOperatorClient {
             }
             ((PgElementSet) out).removeVertexNormals();
         }
+        else if(input instanceof PgPolygonSet) {
+            if( ((PgPolygonSet) input).isShowingPolygonColors())
+                ((PgPolygonSet) out).showPolygonColors(true);
+            
+        } else {
+            if( ((PgPointSet) input).isShowingVertexColors())
+                ((PgPointSet) out).showVertexColors(true);
+            
+        }
+
         setDisplayProperties(out);
 
         System.out.println("out");

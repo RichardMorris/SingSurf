@@ -176,7 +176,8 @@ public class Pcurve extends AbstractClient {
         }
 
 	}
-	public void showSurf()
+	
+	public void showSurf() throws EvaluationException
 	{
 		SphereClip clip = new SphereClip(m_Clipping.getValue());
 		clip.operateCurve(outCurve);

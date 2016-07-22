@@ -11,14 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.List;
@@ -65,10 +62,6 @@ public abstract class AbstractClient extends PjProject implements ItemListener, 
 	LmsPolygonSetMaterial line_mat = null;
 	/** Material properties for points. */
 	LmsPointSetMaterial point_mat = null;
-
-	/** The name of the base geometry. For project where the full geometry
-	 * consists of surfaces, lines and points this the names of the secondary geoms will be constructed from the baseName. **/
-	private		String		baseName;
 
 
 	//******************** Definitions of geometries and defaults
@@ -347,21 +340,6 @@ public void removeGeometry(PgGeometryIf geom) {
 }
 
 
-/** Set the base name for the geometries **/
-
-private final void setBaseName(String name)
-{
-	baseName = name;
-}
-
-/** Get the base name for the geometries **/
-
-protected final String getBaseName()
-{
-	return baseName;
-}
-
-
 /* (non-Javadoc)
  * @see jv.object.PsObject#setName(java.lang.String)
  */
@@ -623,7 +601,6 @@ public void showSurf(PgGeometryIf resultGeom) {
         String txt = calc.getDefinition().toString();
         FileDialog fd = new FileDialog(m_frame,"Save",FileDialog.SAVE);
         fd.setVisible(true);
-        String filename = fd.getDirectory() + fd.getFile();
         File f = new File(fd.getDirectory(), fd.getFile());
         
         Writer writer = null;
@@ -646,7 +623,6 @@ public void showSurf(PgGeometryIf resultGeom) {
         FileDialog fd = new FileDialog(m_frame,"Load",FileDialog.LOAD);
         fd.setVisible(true);
         String filename = fd.getDirectory() + fd.getFile();
-        File f = new File(fd.getDirectory(), fd.getFile());
 
         try {
             LsmpDefReader reader = new LsmpDefReader(filename);
@@ -658,33 +634,7 @@ public void showSurf(PgGeometryIf resultGeom) {
             System.out.println(e);
         }
     }
-    
-    protected void loadDefOld() {
-//        String txt = calc.getDefinition().toString();
-        FileDialog fd = new FileDialog(m_frame,"Save",FileDialog.SAVE);
-        fd.setVisible(true);
-        String filename = fd.getDirectory() + fd.getFile();
-        File f = new File(fd.getDirectory(), fd.getFile());
         
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(                    
-                  new FileInputStream(f.getPath()), "utf-8"));
-            String line = null;
-            String text = "";
-            while ((line = reader.readLine()) != null) {
-                text += line;
-            }
-        } catch (IOException ex) {
-            System.out.println(ex);
-        } finally {
-           try {
-               reader.close();
-           }  catch (Exception ex) {/*ignore*/}
-        }
-        //calc.
-    }
-    
     public void setFrame(Frame frame) {
         this.m_frame = frame;
     }
