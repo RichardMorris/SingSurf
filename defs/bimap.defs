@@ -63,3 +63,22 @@ dT = diff(T,t);
 <variable name="s">
 <variable name="t">
 </definition>
+
+<definition name="Surface of revolution" type="biMap" opType="pcurve">
+M S;
+M = [[1,0,0],[0,cos(pi t),-sin(pi t)],[0,sin(pi t),cos(pi t)]];
+
+<variable name="s" type="none">
+<variable name="t" type="none">
+<variable name="S" type="pcurve">
+<variable name="T" type="pcurve">
+</definition>
+
+<definition name="Tangent developable" type="biMap" opType="pcurve">
+S + t diff(S,s);
+
+<variable name="s" type="none">
+<variable name="t" type="none">
+<variable name="S" type="pcurve">
+<variable name="T" type="pcurve">
+</definition>
