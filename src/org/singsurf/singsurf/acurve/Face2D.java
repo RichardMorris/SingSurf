@@ -87,6 +87,8 @@ public class Face2D {
 			break;
 		case FACE:
 			break;
+        default:
+            break;
 		}
 		return  new FaceSol(faceEdge.INSIDE,0,0);
 	}

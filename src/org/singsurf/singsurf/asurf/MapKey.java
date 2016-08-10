@@ -2,7 +2,9 @@
  * 
  */
 package org.singsurf.singsurf.asurf;
-import static org.singsurf.singsurf.asurf.Key3D.*;
+import static org.singsurf.singsurf.asurf.Key3D.FACE_DD;
+import static org.singsurf.singsurf.asurf.Key3D.FACE_FF;
+import static org.singsurf.singsurf.asurf.Key3D.FACE_LL;
 
 class MapKey {
 	int xl,yl,zl,denom;
@@ -42,7 +44,7 @@ class MapKey {
     		this.type = FACE_DD;
     		break;
     	default:
-        	this.type = type;
+        	break;
     	}
 
     	this.xl = face.xl;

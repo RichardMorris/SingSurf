@@ -2784,7 +2784,7 @@ public class Facets {
 		
 		int i=0;
 		if(box.node_links!=null)
-		for(Node_link_info nl:box.node_links) ++i;
+		for(@SuppressWarnings("unused") Node_link_info nl:box.node_links) ++i;
 		if(i<3) return;
 		//TODO
 	}
@@ -3144,7 +3144,8 @@ public class Facets {
 		//fix_crossing_gaps(box);
 	}
 
-	private void fix_crossing_gaps(Box_info box)
+	@SuppressWarnings("unused")
+    private void fix_crossing_gaps(Box_info box)
 	{
 		
 		Facet_sol fs1;

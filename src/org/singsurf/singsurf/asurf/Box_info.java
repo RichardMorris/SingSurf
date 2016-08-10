@@ -561,7 +561,6 @@ public class Box_info {
 
 
 	public void free_bits_of_box() {
-		Chain_info chains,chains2;
 
 		/*
 			free_sings(box->sings);

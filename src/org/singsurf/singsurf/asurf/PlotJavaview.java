@@ -209,7 +209,6 @@ public class PlotJavaview implements Plotter {
     {
         double vec[]=new double[3],norm[]=new double[3];
         //		float  fvec[]=new float[3],fnorm[]=new float[3];
-        int  col[]=new int[3];
 
         /*
 	if( total_tri_count > 10 ) return;
@@ -372,15 +371,15 @@ public class PlotJavaview implements Plotter {
     	double dots[]=new double[l];
     	double max=0;
     	double min=0;
-    	int npos=0;
-    	int nneg=0;
+//    	int npos=0;
+//    	int nneg=0;
     	for(int i=0;i<l;++i) {
     		//int a = i-1>=0 ? i-1 : i-1+l;
     		dots[i]=tripleScalar(ind[(i-1+l)%l],ind[i],ind[(i+1)%l]);
     		if(dots[i]>max) max=dots[i];
     		if(dots[i]<min) min=dots[i];
-    		if(dots[i]>0) ++npos;
-    		if(dots[i]<0) ++nneg;
+//    		if(dots[i]>0) ++npos;
+//    		if(dots[i]<0) ++nneg;
     	}
 //    	if(npos>0 && nneg>0) {
 //    		StringBuilder sb = new StringBuilder("Non convex "+npos+" "+nneg+" "+eles.size()+"[");

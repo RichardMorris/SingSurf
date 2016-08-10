@@ -7,18 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.nfunk.jep.function.Binomial;
-import org.singsurf.singsurf.acurve.Bern1D.BinBern;
-import org.singsurf.singsurf.acurve.Bern1D.NegBern1D;
-import org.singsurf.singsurf.acurve.Bern1D.PosBern1D;
 import org.singsurf.singsurf.asurf.Face_info;
 
 public class Bern2D {
 	private static final boolean NOT_DEF = false;
-	private static final Object BERN_NO_SIGN = null;
 	public int xord;
 	public int yord;
 	public double[][] coeffs;
-	private Object sign;
 	
 	public Bern2D(int xord,int yord)
 	{
@@ -220,7 +215,6 @@ public class Bern2D {
 
 	public Bern1D make_bern1D_of_face(int type) throws AsurfException
 	{
-		int i;
 		Bern1D aa;
 
 		//if( bb == posbern2D ) return(posbern1D);
@@ -327,6 +321,12 @@ public class Bern2D {
 				case T:
 					db.signs[i] = (int) Math.signum(bb.top().evaluate(fs.x));
 					break;
+                case INSIDE:
+                    break;
+                case OUTSIDE:
+                    break;
+                default:
+                    break;
 				}
 				++i;
 			}
@@ -507,7 +507,6 @@ public class Bern2D {
 		yord = M.yord > N.yord ? M.yord : N.yord;
 
 		aa = new Bern2D(xord,yord);
-		aa.sign = BERN_NO_SIGN;
 		if(M.xord < N.xord)
 		{
 			if(M.yord < N.yord)

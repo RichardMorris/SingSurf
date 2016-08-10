@@ -1,13 +1,15 @@
 package org.singsurf.singsurf.definitions;
 
+import org.lsmp.djep.vectorJep.Dimensions;
 import org.nfunk.jep.ParseException;
 
 /** A single variable. */
 public class DefVariable
 {
-	String name; DefType type=DefType.none;
+	String name; 
+	DefType type=DefType.none;
 	double min,max,value;
-	int steps=-1,dim=1;
+	int steps=-1;
 	public DefVariable(String varname,double min_val,double max_val)
 	{
 		name = varname; min = min_val; max = max_val; 
@@ -43,7 +45,7 @@ public class DefVariable
 		String myname = LsmpDefReader.getAttribute(line,"name");
 		DefType mytype = DefType.get(LsmpDefReader.getAttribute(line,"type"));
 		double mymin=0.0,mymax=0.0;
-		int mysteps = -1,mydim=1;
+		int mysteps = -1;
 		try
 		{
 			String smin = LsmpDefReader.getAttribute(line,"min");
@@ -55,16 +57,16 @@ public class DefVariable
 			String s = LsmpDefReader.getAttribute(line,"steps");
 			if(s != null)
 				mysteps = Integer.valueOf(s).intValue();
-			String d = LsmpDefReader.getAttribute(line,"dim");
-			if(d != null)
-				mydim = Integer.valueOf(d).intValue();
+//			String d = LsmpDefReader.getAttribute(line,"dim");
+//			if(d != null)
+//				mydim = Integer.valueOf(d).intValue();
 		}
 		catch(NumberFormatException e)
 		{
 			throw new ParseException("Format markup for variable: "+line);
 		}
 		DefVariable v = new DefVariable(myname,mytype,mymin,mymax,mysteps);
-		v.setDim(mydim);
+		//v.setDim(mydim);
 		return v;
 	}
 	public String getName() { return name; }
@@ -102,6 +104,6 @@ public class DefVariable
 		this.max = max;
 		this.steps = steps;
 	}
-	public int getDim() {return dim;}
-	public void setDim(int dim) {this.dim = dim;}	
+	public Dimensions getDim() {return this.type.dims;}
+	//public void setDim(int dim) {this.dim = dim;}	
 }

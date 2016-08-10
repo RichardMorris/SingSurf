@@ -87,7 +87,7 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 			AbstractClient newsurf=null;
 			cons = clientClass.getConstructor(new Class[]{GeomStore.class,LsmpDef.class});
 			newsurf = (AbstractClient) cons.newInstance(new Object[]{store,def});
-			newsurf.setFrame(SingSurfPro.this.m_frame);
+ 			newsurf.setFrame(SingSurfPro.this.m_frame);
 			return newsurf;
 		}
 		
@@ -202,7 +202,19 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 //		if(def==null) {
 //		    def = new LsmpDef(gen.title,gen.type,"");
 //		}
-		AbstractClient newsurf = gen.newInstance(def);
+	    AbstractClient newsurf=null;
+	    try {
+	        newsurf = gen.newInstance(def);
+	    } catch (Throwable e) {
+//            e.printStackTrace();
+            StackTraceElement[] trace = e.getStackTrace();
+            System.err.println(e);
+            for(StackTraceElement ele:trace) {
+                System.err.println("\tat "+ele.toString());
+                if(ele.getClassName().equals(this.getClass().getName())) break;
+            }
+            return;
+        }
 		if(m_viewer.hasProject(newsurf.getName()))
 		{
 			String name=null;
@@ -225,7 +237,13 @@ public class SingSurfPro extends PaSingSurf  implements ItemListener, ActionList
 			m_viewer.getDisplay().selectGeometry(newsurf.getGeometry());
 		boolean manageIP = m_viewer.getParameter("Control").equalsIgnoreCase("Hide");
 		if(manageIP){
-			PjProject_IP my_IP = gen.newIpInstance();
+			PjProject_IP my_IP=null;
+            try {
+                my_IP = gen.newIpInstance();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
 			my_IP.setParent(newsurf);
 			pProject.removeAll();
 			pProject.add(my_IP);

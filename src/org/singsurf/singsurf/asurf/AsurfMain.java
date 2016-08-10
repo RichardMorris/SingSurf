@@ -10,6 +10,7 @@ import org.singsurf.singsurf.acurve.AsurfException;
 public class AsurfMain {
 
     public static void main(String args[]) {
+        @SuppressWarnings("unused")
         Binomial bi = new Binomial(); // needed so static initilisation done
 
 //        double aa[][][] = new double[][][] {

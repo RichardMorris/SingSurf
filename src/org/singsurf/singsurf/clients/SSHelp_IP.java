@@ -11,8 +11,8 @@ import jv.project.PjProject_IP;
  *
  */
 public class SSHelp_IP extends PjProject_IP {
-
-	SSHelp parent;
+    private static final long serialVersionUID = 1L;
+    SSHelp parent;
 	/**
 	 * 
 	 */

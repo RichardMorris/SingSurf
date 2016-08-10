@@ -5,13 +5,12 @@ package org.singsurf.singsurf.clients;
 
 import java.awt.TextArea;
 
-import jv.project.PjProject;
-
 /**
  * @author Richard Morris
  *
  */
 public class SSHelp extends jv.project.PjProject {
+    private static final long serialVersionUID = 1L;
 
 	/** The main text area for the equation. **/
 	protected	TextArea	helpText;

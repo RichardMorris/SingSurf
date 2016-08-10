@@ -571,6 +571,8 @@ public class Topology {
 			}
 
 			break;
+        default:
+            break;
 		} /* end switch */
 	}
 

@@ -56,14 +56,16 @@ public class Sol2D {
 		this.val = val;
 		this.key = key;
 		if(opposite)
-			switch(key) {
-		case X:
-				++this.x;
-				break;
-		case Y:
-				++this.y;
-				break;
-		}
+		    switch(key) {
+		    case X:
+		        ++this.x;
+		        break;
+		    case Y:
+		        ++this.y;
+		        break;
+		    default:
+		        break;
+		    }
 	}
 
 	public Sol2D(Edge2D edge,double val) {
@@ -111,6 +113,8 @@ public class Sol2D {
 			res.m_data[0] = range.xmin + (range.width * (x + val)) / denom;
 			res.m_data[1] = range.ymin + (range.height *( y + val2 )) / denom;
 			break;
+        default:
+            break;
 		}
 		return res;
 	}

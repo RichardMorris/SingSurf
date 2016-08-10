@@ -21,6 +21,9 @@ public class Edge2D {
 		switch(key) {
 		case X: return "X-Edge2D" + "("+x+","+y+")/"+denom;
 		case Y: return "Y-Edge2D" + "("+x+","+y+")/"+denom;
+        case FACE: return "Face2D" + "("+x+","+y+")/"+denom;
+        case NONE: return "None";
+        case VERTEX: return "Vertex2D" + "("+x+","+y+")/"+denom;
 		}
 		return null;
 	}
@@ -35,6 +38,8 @@ public class Edge2D {
 			switch(edge.key) {
 			case X: h = new Edge2D(edge.x*2+1,edge.y*2,edge.denom*2,edge.key); break;
 			case Y: h = new Edge2D(edge.x*2,edge.y*2+1,edge.denom*2,edge.key); break;
+            default:
+                break;
 			}
 		}
 	}

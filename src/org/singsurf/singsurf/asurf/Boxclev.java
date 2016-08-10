@@ -18,7 +18,6 @@ import org.singsurf.singsurf.acurve.Bern1D;
 import org.singsurf.singsurf.acurve.Bern2D;
 
 public class Boxclev extends BoxClevA {
-    private static final boolean PLOT_BITS = false;
     private static final boolean FAKE_SINGS = false;
     static final private boolean USE_2ND_DERIV=false;
     static final private boolean FACETS=true;
