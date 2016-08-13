@@ -61,7 +61,7 @@ public class CDiv  extends PostfixMathCommand implements DiffRulesI, BinaryOpera
         double den = c*c + d*d;
                 
         res.setEle(0, ( a * c + b * d ) / den );
-        res.setEle(0, ( b * c - a * d ) / den );
+        res.setEle(1, ( b * c - a * d ) / den );
         res.setEle(2, 0.0);
         return res;
     }
