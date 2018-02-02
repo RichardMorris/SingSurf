@@ -541,7 +541,7 @@ public class PlotJavaview2 implements Plotter {
     /*									*/
     /************************************************************************/
 
-    public void initoogl()
+    public void initPlotter()
     {
         if(draw_lines)
         {
@@ -606,7 +606,7 @@ public class PlotJavaview2 implements Plotter {
         finiflush();
     }
 
-    public void finioogl()
+    public void finiPlotter()
     {
         finiflush();
     }

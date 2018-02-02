@@ -602,7 +602,7 @@ public class PlotJavaview3 implements Plotter {
     /*									*/
     /************************************************************************/
 
-    public void initoogl()
+    public void initPlotter()
     {
         if(draw_lines)
         {
@@ -625,7 +625,7 @@ public class PlotJavaview3 implements Plotter {
      *		the vect and quad tempory vector files.
      */
 
-    @Override
+//    @Override
     public void rewindoogl()
     {
         if(draw_lines)
@@ -668,7 +668,7 @@ public class PlotJavaview3 implements Plotter {
         finiflush();
     }
 
-    public void finioogl()
+    public void finiPlotter()
     {
         finiflush();
     }

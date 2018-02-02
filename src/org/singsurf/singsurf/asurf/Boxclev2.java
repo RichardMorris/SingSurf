@@ -153,10 +153,10 @@ public class Boxclev2 extends BoxClevA {
         rt.gc();
         long t1 = System.currentTimeMillis();
         System.out.printf("start mem %,d%n",rt.totalMemory()-rt.freeMemory());
-        plotter.initoogl();
+        plotter.initPlotter();
         flag = generate_boxes(whole_box,BB);
         plot_and_clear(whole_box,true,true,true);
-        plotter.finioogl();
+        plotter.finiPlotter();
         rt.gc();
         long t2 = System.currentTimeMillis();
         System.out.printf("time %d mem %,d%n",t2-t1,rt.totalMemory()-rt.freeMemory());

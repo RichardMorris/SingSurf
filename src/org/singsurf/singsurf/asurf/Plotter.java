@@ -1,16 +1,29 @@
 package org.singsurf.singsurf.asurf;
 
+/**
+ * Interface to define the plotting of a calculated surface.
+ */
 public interface Plotter {
 
-    void plot_all_facets(Box_info box);
-
+    /**
+     * Plot all the geometry inside a box.
+     * @param box
+     */
     void plot_box(Box_info box);
 
-    void initoogl();
+    /**
+     * Call before plotting
+     */
+    void initPlotter();
 
-    void finioogl();
+    /**
+     * Call after plotting. 
+     */
+    void finiPlotter();
 
+    /**
+     * Remove all tempory data which might have been stored by the plotter
+     */
     void clear();
 
-    void rewindoogl();
 }
