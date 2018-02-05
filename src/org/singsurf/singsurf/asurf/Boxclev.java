@@ -119,7 +119,7 @@ public class Boxclev extends BoxClevA {
         Runtime rt = Runtime.getRuntime();
         long t1 = System.currentTimeMillis();
         System.out.printf("start mem %,d %,d %,d %,d%n",rt.totalMemory()-rt.freeMemory(),rt.totalMemory(),rt.freeMemory(),rt.maxMemory());
-        plotter.initPlotter();
+        plotter.initPlotter(this);
         flag = generate_boxes(whole_box,BB);
         if(LITTLE_FACETS)
             plot_all_boxes(whole_box);

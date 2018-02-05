@@ -4,6 +4,10 @@ import jv.geom.PgElementSet;
 import jv.geom.PgPointSet;
 import jv.geom.PgPolygonSet;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+
 import org.nfunk.jep.function.Binomial;
 import org.singsurf.singsurf.acurve.AsurfException;
 
@@ -11,8 +15,9 @@ public class AsurfMain {
 
     public static void main(String args[]) {
         @SuppressWarnings("unused")
-        Binomial bi = new Binomial(); // needed so static initilisation done
+        Binomial bi = new Binomial(); // needed so static initilization done
 
+        // A1 singularity
 //        double aa[][][] = new double[][][] {
 //                {{0.1,0.0,1.0},{0.0,0.0,0.0},{-1.0,0.0,0.0}},
 //                {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}},
@@ -71,6 +76,7 @@ public class AsurfMain {
 //                {{-1.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
 //                {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}}, 
 //                {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}}};
+//        Region_info reg = new Region_info(-1.14,1.03,-1.13,1.04,-1.12,1.05);
 
         // Plane
         //		double aa[][][] = new double[][][] {
@@ -81,29 +87,27 @@ public class AsurfMain {
         //					{{0.0,0.0,1.0},{0.0,0.0,0.0},{-1.0,0.0,0.0}}};
         
         //Diagonal Surface of Clebsch
-//        double aa[][][] = new double[][][] {
-//        {{0.0,0.0,0.0,16.0},{0.0,-0.0,-48.0,0.0},{0.0,-48.0,0.0,0.0},{16.0,0.0,0.0,0.0}},
-//        {{-72.0,0.0,24.0,0.0},{0.0,0.0,0.0,0.0},{24.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
-//        {{-93.53074360871936,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
-//        {{-31.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}}};
-//        Region_info reg = new Region_info(-4.14,4.03,-4.13,4.04,-4.12,4.05);
-
-
         double aa[][][] = new double[][][] {
-        		{{2.0,2.0,-2.0,-2.0},{0.0,0.0,0.0,0.0},{6.0,2.0,0.0,0.0}},
-        		{{0.0,0.0,0.0,0.0},{4.0,-4.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
-        		{{-2.0,-6.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}}};
-        Region_info reg = new Region_info(1.36,2.03,-2.13,-1.4600000000000004,-1.5199999999999996,-0.8500000000000002);
-        
-        
-        //Region_info reg = new Region_info(-1.14,1.03,-1.13,1.04,-1.12,1.05);
+        {{0.0,0.0,0.0,16.0},{0.0,-0.0,-48.0,0.0},{0.0,-48.0,0.0,0.0},{16.0,0.0,0.0,0.0}},
+        {{-72.0,0.0,24.0,0.0},{0.0,0.0,0.0,0.0},{24.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
+        {{-93.53074360871936,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
+        {{-31.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}}};
+        Region_info reg = new Region_info(-4.14,4.03,-4.13,4.04,-4.12,4.05);
 
-        for(int i=0;i<1;++i) {
-            PgElementSet surf = new PgElementSet(3);
-            PgPolygonSet curve = new PgPolygonSet(3);
-            PgPointSet points = new PgPointSet(3);
+
+//        double aa[][][] = new double[][][] {
+//        		{{2.0,2.0,-2.0,-2.0},{0.0,0.0,0.0,0.0},{6.0,2.0,0.0,0.0}},
+//        		{{0.0,0.0,0.0,0.0},{4.0,-4.0,0.0,0.0},{0.0,0.0,0.0,0.0}},
+//        		{{-2.0,-6.0,0.0,0.0},{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}}};
+//        Region_info reg = new Region_info(1.36,2.03,-2.13,-1.4600000000000004,-1.5199999999999996,-0.8500000000000002);
+        
+        
+
+//            PgElementSet surf = new PgElementSet(3);
+//            PgPolygonSet curve = new PgPolygonSet(3);
+//            PgPointSet points = new PgPointSet(3);
 //            BoxClevA bc = new Boxclev2(surf,curve,points,2,4,8,16,false);
-            BoxClevA bc = new Boxclev2(surf,curve,points,4,16,64,256,false);
+//            BoxClevA bc = new Boxclev2(surf,curve,points,4,16,64,256,false);
             //BoxClevA bc = new Boxclev2(surf,curve,points,8,16,128,512, false);
             //Boxclev bc = new Boxclev(surf,curve,points,16,64,256,1024);
 //            Region_info reg = new Region_info(-1.14,1.03,-1.13,1.04,-1.12,1.05);
@@ -114,14 +118,19 @@ public class AsurfMain {
             //BOXCLEV 16 64 256 1024 true
             //Boxclev bc = new Boxclev(surf,curve,points,32,256,1024,8192);
 
+
             try {
+                File f = new File("tmp.obj");
+                PrintStream out = new PrintStream(f);
+                Boxclev2 bc = new Boxclev2(new PlotObj(false,out),8,16,128,512, false);
                 bc.marmain(aa, reg);
             } catch (AsurfException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            } catch (FileNotFoundException e) {
+        	System.out.println(e);
             }
 
-        }
     }
 
 

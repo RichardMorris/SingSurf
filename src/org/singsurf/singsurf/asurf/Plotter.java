@@ -14,7 +14,7 @@ public interface Plotter {
     /**
      * Call before plotting
      */
-    void initPlotter();
+    void initPlotter(BoxClevA bc);
 
     /**
      * Call after plotting. 

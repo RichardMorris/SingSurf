@@ -96,7 +96,17 @@ public class Boxclev2 extends BoxClevA {
     /*********************** Start of Sub-routines **************************/
 
 
+    public Boxclev2(Plotter p,int coarse, int fine, int face, int edge,boolean draw_lines) {
+	this.plotter = p;
+	facets = new Facets(this);
+        Face_info.allFaces.clear();
+        RESOLUTION = coarse;
+        LINK_SING_LEVEL = fine;
+        LINK_FACE_LEVEL = face;
+        SUPER_FINE = edge;
 
+        System.out.printf("BOXCLEV %d %d %d %d %b\n", coarse, fine, face, edge,draw_lines);
+    }
 
     public Boxclev2(PgElementSet outSurf, PgPolygonSet outCurve,
             PgPointSet outPoints, int coarse, int fine, int face, int edge,boolean draw_lines) {
@@ -153,7 +163,7 @@ public class Boxclev2 extends BoxClevA {
         rt.gc();
         long t1 = System.currentTimeMillis();
         System.out.printf("start mem %,d%n",rt.totalMemory()-rt.freeMemory());
-        plotter.initPlotter();
+        plotter.initPlotter(this);
         flag = generate_boxes(whole_box,BB);
         plot_and_clear(whole_box,true,true,true);
         plotter.finiPlotter();

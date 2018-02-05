@@ -602,9 +602,12 @@ public class PlotJavaview3 implements Plotter {
     /*									*/
     /************************************************************************/
 
-    public void initPlotter()
+    @Override
+    public void initPlotter(BoxClevA bc)
     {
-        if(draw_lines)
+	this.boxclev = bc;
+
+	if(draw_lines)
         {
 
         }

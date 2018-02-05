@@ -2,7 +2,7 @@ package org.singsurf.singsurf.asurf;
 
 import static org.singsurf.singsurf.asurf.Key3D.BOX;
 
-import java.awt.Color;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,14 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jv.geom.PgElementSet;
-import jv.geom.PgPointSet;
-import jv.geom.PgPolygonSet;
-import jv.project.PgGeometryIf;
-import jv.vecmath.PdVector;
-import jv.vecmath.PiVector;
-
-public class PlotJavaview implements Plotter {
+public class PlotObj implements Plotter {
     private static final boolean PRINT_FACET=false;
     private static final boolean PLOT_NODE_LINKS=true;
     private static final boolean PLOT_SINGS=true;
@@ -26,10 +19,6 @@ public class PlotJavaview implements Plotter {
     private static final boolean FIX_NORMS = false;
 
 
-    protected PgGeometryIf outGeom;
-    PgElementSet elements;
-    PgPointSet points;
-    PgPolygonSet lines;
     BoxClevA boxclev;
 
     /************************************************************************/
@@ -51,15 +40,106 @@ public class PlotJavaview implements Plotter {
 	private static final boolean ECHO_OUTPUT
      */
 
+
+    /* from boxclev.c */
+    //extern void calc_pos_norm_actual(Sol_info sol,double vec[3],double norm[3]);
+    //extern void calc_pos_actual(Sol_info sol,double vec[3]);
+
     int global_degen;
     int global_mode;
     Sol_info known_sings[];	/* The singularities known from external data */
     int num_known_sings;	/* number of such */
 
+    public static class PiVector {
+	public PiVector(int[] ind) {
+	    this.vals = ind;
+	}
+
+//	public PiVector(int vect_point_count, int i) {
+//	    // TODO Auto-generated constructor stub
+//	}
+
+	int[] vals;
+    }
+    
+    public static class PdVector {
+	double x,y,z;
+
+	public PdVector(double[] vec) {
+	    x = vec[0];
+	    y = vec[1];
+	    z = vec[2];
+	}
+
+	public PdVector(double x1,double y1,double z1) {
+	    x = x1;
+	    y = y1;
+	    z = z1;
+	}
+
+	public static PdVector subNew(PdVector v1, PdVector v2) {
+	    return new PdVector(v1.x-v2.x,v1.y-v2.y,v1.z-v2.z);
+	}
+
+	public double length() {
+	    return Math.sqrt(x*x+y*y+z*z);
+	}
+
+	public double dot(PdVector v2) {
+	    return x*v2.x+y*v2.y+z*v2.z;
+	}
+
+	public void multScalar(double d) {
+	    x *= d;
+	    y *= d;
+	    z *= d;
+	}
+
+	public void normalize() {
+	    double len = length();
+	    multScalar(1/len);
+	    
+	}
+
+	/**
+	 * Set this to be v2
+	 * @param v2
+	 * @param i first index of array to set, ignored
+	 * @param j number of eles to set, ignored 
+	 */
+	public void set(PdVector v2, int i, int j) {
+	    x = v2.x;
+	    y = v2.y;
+	    z = v2.z;
+	}
+
+	public static double dot(PdVector v1, PdVector v2) {
+	    return v1.dot(v2);
+	}
+
+	public static PdVector crossNew(PdVector a, PdVector b) {
+	    return new PdVector(
+		    a.y * b.z - a.z * b.y,
+		    a.z * b.x - a.x * b.z,
+		    a.x * b.y - a.y * b.x);
+	}
+    }
+    
+    //private static final boolean grballoc(node) ( node * ) malloc( sizeof(node) )
+    //private static final boolean fabsf(real) (float) fabs((double) real)
+
     Region_info region;
     int facet_vertex_count;		/*** The number of verticies on a facet ***/
     int total_face_sol_count;		/*** The number of solutions on faces ***/
 
+    /*
+	char *ifs_coords_file_name = "coordsfile", *vect_file_name = "vectfile";
+	char *ifs_index_file_name = "indexfile", *ifs_norms_file_name = "normfile";
+     */
+    //	char vect_file_name[L_tmpnam],ifs_coords_file_name[L_tmpnam],isolated_file_name[L_tmpnam],
+    //		ifs_norms_file_name[L_tmpnam],ifs_index_file_name[L_tmpnam];
+    //	FILE *vect_file,*ooglfile,*ifs_coords_file,*ifs_index_file,*ifs_norms_file,
+    //		*isolated_file;
 
     int tri_index[]=new int[3];	/* holds the indices of the current facet */
     int tri_count,total_tri_count;
@@ -69,18 +149,18 @@ public class PlotJavaview implements Plotter {
     List<PiVector> eles    = new ArrayList<PiVector>();
     List<PdVector> verts = new ArrayList<PdVector>();
     List<PdVector> norms = new ArrayList<PdVector>();
-    List<Color> cols = new ArrayList<Color>();
-    
+    //List<Color> cols = new ArrayList<Color>();
     Map<Integer,List<Integer>> goodNorms = new HashMap<Integer,List<Integer>>();
+    
+    List<PdVector> points = new ArrayList<PdVector>();
+    List<PdVector> lines = new ArrayList<PdVector>();
 
-    public PlotJavaview(BoxClevA boxclev, PgElementSet elements,
-            PgPolygonSet lines, PgPointSet points,boolean draw_lines) {
+    PrintStream out;
+
+    public PlotObj(boolean draw_lines,PrintStream out) {
         super();
-        this.boxclev = boxclev;
-        this.elements = elements;
-        this.points = points;
-        this.lines = lines;
         this.draw_lines = draw_lines;
+        this.out = out;
     }
 
     @Override
@@ -100,23 +180,88 @@ public class PlotJavaview implements Plotter {
     public void plot_all_facets(Box_info box)
     {
         if(box.facets==null) return;
+        if(boxclev.global_selx >=0 && (
+             box.xl * boxclev.global_denom < boxclev.global_selx * box.denom 
+          || box.xl * boxclev.global_denom > (boxclev.global_selx+1) * box.denom ) ) return;
+        if(boxclev.global_sely >=0 && (
+             box.yl * boxclev.global_denom < boxclev.global_sely * box.denom 
+          || box.yl * boxclev.global_denom > (boxclev.global_sely+1) * box.denom ) ) return; 
+        if(boxclev.global_selz >=0 && (
+             box.zl * boxclev.global_denom < boxclev.global_selz * box.denom 
+          || box.zl * boxclev.global_denom > (boxclev.global_selz+1) * box.denom ) ) return;
 
         Set<Sol_info> allSols = new HashSet<Sol_info>();
         for(Facet_info f1:box.facets)
             allSols.addAll(f1.getSols());
         int typeCount[] = countSolType(allSols);
-        if(typeCount[3]+typeCount[4]+typeCount[5]+typeCount[6]+typeCount[7]+typeCount[8]+typeCount[9]+typeCount[10]+typeCount[11] > 0)
-            System.out.println("TYPECOUNT"+Arrays.toString(typeCount));
         if(typeCount[9]>0) {
-            for(Sol_info s:allSols)
-                System.out.println(s);
+            System.out.println("TYPECOUNT"+Arrays.toString(typeCount));
+            for(Sol_info s:allSols) {
+                if( s.type == Key3D.BOX) {
+                    System.out.println(s);
+                    double vec[] = new double[3];
+                    s.calc_pos(vec);
+                    double f = boxclev.BB.evalbern3D(vec);
+                    double x = boxclev.CC.evalbern3D(vec);
+                    double y = boxclev.DD.evalbern3D(vec);
+                    double z = boxclev.EE.evalbern3D(vec);
+                    double xx = boxclev.Dxx.evalbern3D(vec);
+                    double xy = boxclev.Dxy.evalbern3D(vec);
+                    double xz = boxclev.Dxz.evalbern3D(vec);
+                    double yy = boxclev.Dyy.evalbern3D(vec);
+                    double yz = boxclev.Dyz.evalbern3D(vec);
+                    double zz = boxclev.Dzz.evalbern3D(vec);
+                    System.out.printf(" F: d=%6.3f; a=%6.3f; b=%6.3f; c=%6.3f;%n",f,x,y,z); 
+                    System.out.printf("dx: d=%6.3f; a=%6.3f; b=%6.3f; c=%6.3f;%n",x,xx,xy,xz); 
+                    System.out.printf("dy: d=%6.3f; a=%6.3f; b=%6.3f; c=%6.3f;%n",y,xy,yy,yz); 
+                    System.out.printf("dz: d=%6.3f; a=%6.3f; b=%6.3f; c=%6.3f;%n",z,xz,yz,zz); 
+                }
+            }
         }
-        
-        
-        
+/*
+0 0 0 f  0.190 df 11.895 -0.323 10.736 d2f  0.576 99.540 681.725 1509.198 103.470  1.237
+0 0 1 f  0.004 df -0.546 -2.355 55.904 d2f 76.711 345.003 659.010 1419.117 159.570 -6.732
+1 0 0 f  0.006 df 57.899 -2.422 -0.573 d2f -6.951 165.746 657.428 1411.961 357.350 82.990
+
+
+
+ */
         for(Facet_info f1:box.facets)
         {
-            plot_facet(f1);
+            if(boxclev.global_selx>=0 || boxclev.global_sely>=0 || boxclev.global_selz>=0)
+                System.out.println(f1);
+            plot_facet(f1,box);
+        }
+    }
+    boolean simple=true;
+    boolean onLargeBox(Sol_info sol) {
+        if( simple) return true;
+        int mul = sol.denom / boxclev.RESOLUTION;
+        switch(sol.type) {
+        case X_AXIS: 
+            return sol.yl % mul == 0 
+               &&  sol.zl % mul == 0 ; 
+                                       
+            
+        case Y_AXIS:
+            return sol.xl % mul == 0 
+               &&  sol.zl % mul == 0 ; 
+        case Z_AXIS: 
+            return sol.xl % mul == 0 
+               &&  sol.yl % mul == 0 ; 
+        case FACE_LL:
+        case FACE_RR:
+            return sol.xl % mul == 0; 
+        case FACE_FF:
+        case FACE_BB:
+            return sol.xl % mul == 0 ;
+        case FACE_DD: 
+        case FACE_UU: 
+            return sol.xl % mul == 0 ;
+        case BOX: 
+            return true;
+        default:
+            return false;
         }
     }
 
@@ -140,10 +285,10 @@ public class PlotJavaview implements Plotter {
         }
         return res;
     }
-    
+
     
     boolean problem=false;
-    private void plot_facet(Facet_info f1) {
+    private void plot_facet(Facet_info f1, Box_info box) {
         Facet_sol s1;
         problem=false;
         //		System.out.println(f1);
@@ -154,15 +299,16 @@ public class PlotJavaview implements Plotter {
         if(s1.next == null) return;
         if(s1.next.next == null) return;
 
-
-
         bgnfacet();
         int nSols=0;
         while(s1 != null)
         {
+            if( onLargeBox(s1.sol) ) 
+            {
                 plot_sol(s1.sol);
                 if(s1.sol.plotindex>=0)
                     ++nSols;
+            }
             s1 = s1.next;
         }
         int[] ind = new int[nSols];
@@ -172,7 +318,8 @@ public class PlotJavaview implements Plotter {
         int pos=0;
         while(s1 != null)
         {
-            if(s1.sol.plotindex>=0) {
+            if(onLargeBox(s1.sol) && 
+               s1.sol.plotindex>=0) {
                 ind[pos]=s1.sol.plotindex;
                 ++pos;
             }
@@ -197,19 +344,34 @@ public class PlotJavaview implements Plotter {
         endfacet();
     }
 
-    Color calcSolColour(Sol_info sol) {
-        int r = (sol.dx == 0  ? 255 : 0);
-        int g = (sol.dy == 0  ? 255 : 0);
-        int b = (sol.dz == 0  ? 255 : 0);
-
-        return new Color(r,g,b);
+    boolean plotCond(Sol_info sol, Box_info box) {
+        if( sol.type.isEdge() ) return true;
+        switch(sol.type)
+        {
+        case X_AXIS:
+        case Y_AXIS:
+        case Z_AXIS:
+        case BOX:
+            return true;
+        case FACE_LL: case FACE_RR:
+           return ( sol.xl * box.denom == box.xl * sol.denom  
+             || sol.xl * box.denom == (box.xl+1) * sol.denom );  
+        case FACE_FF: case FACE_BB:
+            return ( sol.yl * box.denom == box.yl * sol.denom  
+            || sol.yl * box.denom == (box.yl+1) * sol.denom );  
+        case FACE_DD: case FACE_UU:
+            return ( sol.zl * box.denom == box.zl * sol.denom  
+            || sol.zl * box.denom == (box.zl+1) * sol.denom );
+        default:
+            return false;
+        }
     }
-    
-    
+
     void plot_sol(Sol_info sol)
     {
         double vec[]=new double[3],norm[]=new double[3];
         //		float  fvec[]=new float[3],fnorm[]=new float[3];
+        int  col[]=new int[3];
 
         /*
 	if( total_tri_count > 10 ) return;
@@ -234,6 +396,9 @@ public class PlotJavaview implements Plotter {
                 sol.plotindex = -2;
                 return;
             }
+            col[0] = 128;
+            col[1] = 128;//(short) (256 * vec[2]);
+            col[2] = 128;//(short) (256 - col[1]);
             //			fvec[0] = (float) vec[0];
             //			fvec[1] = (float) vec[1];
             //			fvec[2] = (float) vec[2];
@@ -247,7 +412,7 @@ public class PlotJavaview implements Plotter {
 
             verts.add(new PdVector(vec));
             norms.add(new PdVector(norm));
-            cols.add(calcSolColour(sol));
+            //cols.add(new Color(col[0],col[1],col[2]));
             //			elements.setVertex(sol.plotindex,new PdVector(vec));
             //			elements.setVertexNormal(sol.plotindex,new PdVector(norm));
             //			elements.setVertexColor(sol.plotindex,new Color(col[0],col[1],col[2]));
@@ -372,15 +537,15 @@ public class PlotJavaview implements Plotter {
     	double dots[]=new double[l];
     	double max=0;
     	double min=0;
-//    	int npos=0;
-//    	int nneg=0;
+    	int npos=0;
+    	int nneg=0;
     	for(int i=0;i<l;++i) {
     		//int a = i-1>=0 ? i-1 : i-1+l;
     		dots[i]=tripleScalar(ind[(i-1+l)%l],ind[i],ind[(i+1)%l]);
     		if(dots[i]>max) max=dots[i];
     		if(dots[i]<min) min=dots[i];
-//    		if(dots[i]>0) ++npos;
-//    		if(dots[i]<0) ++nneg;
+    		if(dots[i]>0) ++npos;
+    		if(dots[i]<0) ++nneg;
     	}
 //    	if(npos>0 && nneg>0) {
 //    		StringBuilder sb = new StringBuilder("Non convex "+npos+" "+nneg+" "+eles.size()+"[");
@@ -507,7 +672,6 @@ public class PlotJavaview implements Plotter {
     public void initPlotter(BoxClevA bc)
     {
 	this.boxclev = bc;
-
         if(draw_lines)
         {
 
@@ -529,6 +693,7 @@ public class PlotJavaview implements Plotter {
      *		the vect and quad tempory vector files.
      */
 
+//    @Override
     public void rewindoogl()
     {
         if(draw_lines)
@@ -556,13 +721,25 @@ public class PlotJavaview implements Plotter {
         PiVector res[] = new PiVector[eles.size()];
         PdVector[] pts = new PdVector[verts.size()];
         PdVector[] ns  = new PdVector[norms.size()];
-        Color[] co     = new Color[cols.size()];
-        elements.setNumVertices(verts.size());
-        elements.setVertices(verts.toArray(pts));
-        elements.setVertexNormals(norms.toArray(ns));
-        elements.setVertexColors(cols.toArray(co));
-        elements.setNumElements(res.length);
-        elements.setElements(eles.toArray(res));
+        //Color[] co     = new Color[cols.size()];
+        
+        out.println("#Vertices number\t"+verts.size());
+        for(PdVector vec : verts) {
+            out.printf("v %6.3f %6.3f %6.3f%n", vec.x, vec.y, vec.z);
+        }
+        out.println("#Normals number\t"+norms.size());
+        for(PdVector vec : norms) {
+            out.printf("vn %6.3f %6.3f %6.3f%n", vec.x, vec.y, vec.z);
+        }
+        //elements.setVertexColors(cols.toArray(co));
+        out.println("#Elements number\t"+res.length);
+        for(PiVector vec:eles) {
+            out.print("f");
+            for(int i: vec.vals) {
+        	out.printf(" %d//%d",i+1,i+1);
+            }
+            out.println();
+        }
     }
 
 
@@ -632,7 +809,6 @@ public class PlotJavaview implements Plotter {
 
     short goodnorm[]=new short[3];
 
-
     private void calc_pos_norm_actual(Sol_info sol, double[] vec, double[] norm) {
         boxclev.calc_pos_norm_actual(sol,vec,norm);
     }
@@ -659,7 +835,7 @@ public class PlotJavaview implements Plotter {
             print_sol(sol);
         }
         PdVector pdv = new PdVector(vec);
-        this.points.addVertex(pdv);
+        this.points.add(pdv);
 
         ++isolated_count;
     }
@@ -688,7 +864,7 @@ public class PlotJavaview implements Plotter {
                     vec[0],vec[1],vec[2] );
             print_sol(sol1);
         }
-        lines.addVertex(new PdVector(vec));
+        lines.add(new PdVector(vec));
 
         calc_pos_actual(sol2,vec);
         if(PRINT_FACET) {
@@ -703,9 +879,9 @@ public class PlotJavaview implements Plotter {
                     vec[0],vec[1],vec[2] );
             print_sol(sol2);
         }
-        lines.addVertex(new PdVector(vec));
+        lines.add(new PdVector(vec));
 
-        lines.addPolygon(new PiVector(vect_point_count,vect_point_count+1));
+        //lines.add(new PiVector(vect_point_count,vect_point_count+1));
         ++vect_count;
         vect_point_count += 2;
 

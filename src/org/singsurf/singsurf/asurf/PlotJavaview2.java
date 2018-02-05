@@ -82,6 +82,7 @@ public class PlotJavaview2 implements Plotter {
         this.draw_lines = draw_lines;
     }
 
+    @Override
     public void clear() {
     	this.eles.clear();
     	this.verts.clear();
@@ -507,6 +508,7 @@ public class PlotJavaview2 implements Plotter {
 
     /********** Main entry point for routines *****************/
 
+    @Override
     public void plot_box(Box_info box)
     {
         plot_all_facets(box);
@@ -541,8 +543,11 @@ public class PlotJavaview2 implements Plotter {
     /*									*/
     /************************************************************************/
 
-    public void initPlotter()
+    @Override
+    public void initPlotter(BoxClevA bc)
     {
+	this.boxclev = bc;
+
         if(draw_lines)
         {
 
@@ -606,6 +611,7 @@ public class PlotJavaview2 implements Plotter {
         finiflush();
     }
 
+    @Override
     public void finiPlotter()
     {
         finiflush();
